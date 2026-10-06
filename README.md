@@ -1,3 +1,5 @@
+## Perbandingan Judgels dengan Aplikasi Sejenis
+
 | Aspek | Judgels | DOMjudge | CMS (Contest Management System) | DMOJ |
 |---|---|---|---|---|
 | Pengembang | Ikatan Alumni TOKI | Komunitas DOMjudge | Komunitas CMS | Komunitas DMOJ |
