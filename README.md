@@ -361,33 +361,8 @@ Judgels cocok bila dibutuhkan pengelolaan soal yang kaya fitur sekaligus kontes 
 
 2. https://judgels.toki.id/docs/introduction/
 
-Hasil Deployment : https://cp-judgels.web.id dan disusun oleh:
+3. https://judgels.toki.id/docs/deployment/concepts/
 
- <table align="center" style="margin-top: 1rem; text-align: left; border-collapse: collapse;">
-      <tr>
-        <th style="padding: 6px 16px; border: 1px solid #444;">Nama</th>
-        <th style="padding: 6px 16px; border: 1px solid #444;">NIM</th>
-      </tr>
-      <tr>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Ahmad Rafif Ilmany</strong></td>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241090</code></td>
-      </tr>
-      <tr>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Mochamad Aleandre Moulidouane</strong></td>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241105</code></td>
-      </tr>
-      <tr>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Rafael Federico Atantya</strong></td>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241108</code></td>
-      </tr>
-      <tr>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Aditya Cahyo Nugroho</strong></td>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241109</code></td>
-      </tr>
-    </table>
+4. https://judgels.toki.id/docs/deployment/installation/
 
-4. https://judgels.toki.id/docs/deployment/concepts/
-
-5. https://judgels.toki.id/docs/deployment/installation/
-
-6. https://judgels.toki.id/docs/deployment/cheatsheet/
+5. https://judgels.toki.id/docs/deployment/cheatsheet/
