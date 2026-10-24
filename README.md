@@ -1,16 +1,19 @@
 <section align="center">
   <img src="assets/logo.png" alt="Judgels Logo" width="280" style="margin-bottom: 1.5rem;"/>
-  <div align="center">
-    <h1>Aplikasi Judgels</h1>
+    <h1>Judgels</h1>
     <p><strong>Projek Akhir Praktikum Komunikasi Data dan Jaringan Komputer</strong><br/>
     Departemen Ilmu Komputer - IPB University<br/>
-    Target Deployment: <a href="https://cp-judgels.web.id"><code>http://103.160.213.105</code>
+    Hasil Deployment : https://cp-judgels.web.id
     </a></p>
     <p>Disusun oleh:</p>
     <table align="center" style="margin-top: 1rem; text-align: left; border-collapse: collapse;">
       <tr>
         <th style="padding: 6px 16px; border: 1px solid #444;">Nama</th>
         <th style="padding: 6px 16px; border: 1px solid #444;">NIM</th>
+      </tr>
+      <tr>
+        <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Ahmad Rafif Ilmany</strong></td>
+        <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241090</code></td>
       </tr>
       <tr>
         <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Mochamad Aleandre Moulidouane</strong></td>
@@ -24,12 +27,9 @@
         <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Aditya Cahyo Nugroho</strong></td>
         <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241109</code></td>
       </tr>
-      <tr>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Ahmad Rafif Ilmany</strong></td>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241090</code></td>
-      </tr>
     </table>
   </div>
+   bagian ini nanti benerin ges!
   <br/>
   <nav aria-label="Navigation">
     <a href="#sekilas-tentang">Sekilas Tentang</a> |
@@ -41,19 +41,58 @@
 
 ## Sekilas Tentang
 
-**Judgels** adalah platform *open-source* untuk pengelolaan kontes pemrograman kompetitif (*competitive programming*) dan pelatihan daring (*training camp*). Dikembangkan secara aktif oleh **Ikatan Alumni Tim Olimpiade Komputer Indonesia (IA-TOKI)**, platform ini menjadi fondasi utama sistem penjurian nasional di Indonesia, termasuk **TLX TOKI**, Olimpiade Sains Nasional (OSN) bidang Informatika, hingga seleksi Pelatnas Tim Olimpiade Komputer Indonesia menuju IOI.
+**Judgels** adalah platform open-source untuk pengelolaan competitive programming. Dikembangkan secara aktif oleh Ikatan Alumni Tim Olimpiade Komputer Indonesia (IA-TOKI), untuk perkembangan terbaru (termasuk versi terbaru/TLS) dapat dilihat di [repo resmi Judgels](https://github.com/ia-toki/judgels).
 
-Berbeda dari sistem berbasis monolitik konvensional, Judgels dirancang menggunakan arsitektur layanan terdistribusi (*distributed services*) untuk memastikan isolasi keamanan dan skalabilitas beban saat melayani ratusan pengiriman program secara serentak.
+<details>
+<summary>Judgels udah dipakai dimana saja?</summary>
+    Judgels sudah dipakai pada beberapa kompetisi nasional, diantaranya:
+<ol>
+  <li>TLX, latihan CP (Competitive Programming) terbesar di Indonesia.</li>
+  <li>Indonesian National Olympiad in Informatics sejak 2015.</li>
+  <li>Asia-Pacific Informatics Olympiad 2015 & 2020, hosted by Indonesia.</li>
+</ol>
+</details>
 
-### Ringkasan Cepat (Executive Summary)
+<details>
+<summary>Tipe soal apa saja yang didukung Judgels?</summary>
+Judgels juga mendukung beberapa tipe soal yang lazim ditemui pada contest Competitive Programming:
+  <ol>
+    <li>Batch, dimana program peserta akan membaca input (bisa dengan <kbd>scanf()</kbd> maupun input lainnya sesuai dengan bahasa pemrograman) lalu program peserta akan mengeluarkan output yang akan disesuaikan dengan hasil dari juri/admin yang sudah disiapkan sebelumnya.</li>
+    <li>Interactive, program peserta akan melakukan komunikasi bolak balik dua arah antara program peserta dengan program juri. Biasanya jenis soal yang digunakan adalah untuk menebak angka atau penelusuran graf tersembunyi. Dengan konsep bolak balik ini, program peserta wajib menggunakan flush (<kbd>fflush(stdout)</kbd> atau <kbd>cout << flush</kbd>).</li>
+    <li>Output-Only, peserta hanya perlu memberikan file outputnya (misalkan dalam bentuk .txt maupun .out).
+    <li>Functional / Grader, peserta hanya perlu membuat function sesuai dengan format yang sudah ditentukan dan akan mereturn jawaban yang sesuai. Yang memakai konsep ini salah satu contohnya adalah LeetCode.</li>
+  </ol>
+</details>
 
-- **Definisi:** Platform *online judge* dan sistem manajemen kontes pemrograman *open-source* berbasis layanan terdistribusi.
-- **Implementasi Nyata:** Mesin utama di balik platform **TLX TOKI** dan Olimpiade Sains Nasional (OSN) Informatika.
-- **Fungsi Pokok:** Pengelolaan bank soal, penerimaan solusi peserta, eksekusi kode terisolasi (*sandbox*), penilaian otomatis (*verdict* AC/WA/TLE), dan papan skor waktu nyata (*live scoreboard*).
-- **Arsitektur:** Terdiri dari antarmuka web peserta (**Judgels Client - React SPA**), layanan backend & panel juri (**Judgels Server - Java**), pekerja penilai (**Judgels Grader - Java Worker**), antrean tugas (**RabbitMQ**), serta basis data relasional (**MySQL**).
-- **Format Penilaian:** Mendukung penuh format **IOI** (dengan pembobotan subtask dan skor parsial) serta format **ICPC** (penalti waktu dan skor penuh).
+<details>
+<summary>Bagaimana dengan mekanisme penilaiannya?</summary>
+Selain mendukung banyak tipe soal, Judgels juga mendukung beberapa mekanisme penilaian:
+  <ol>
+    <li>Subtask, intinya adalah terdapat perbedaan poin pada setiap subtask/test case. Misal subtask 1 bernilai 20 poin, sedangkan subtask 2 bernilai 80 poin pada sebuah soal.</li>
+    <li>Custom Checker, intinya adalah seluruh proses dari program peserta akan dicek, apakah sesuai dengan soal yang diminta atau tidak. Kalau terdapat salah satu saja yang tidak, maka untuk soal tersebut akan dinyatakan Wrong Answer (WA).</li>
+  </ol>
+</details>
 
----
+<details>
+<summary>Lalu, apa saja Format Kompetisi yang didukung Judgels?</summary>
+Berdasarkan beberapa fitur/tipe yang didukung oleh Judgels, maka dapat disimpulkan Judgels juga mendukung beberapa Format Kompetisi, yaitu:
+  <ol>
+    <li>IOI (International Olympiad in Informatics), biasanya dipakai untuk siswa tingkat menengah (SMA atau OSN).</li>
+      <ul>
+        <li>Peserta berkompetisi secara individu.</li>
+        <li>Penilaian berbasis poin per subtask (skor 0 hingga 100 per soal).</li>
+        <li>Tidak ada sistem penalti waktu untuk wrong submission (hanya skor tertinggi per soal yang dihitung).</li>
+        <li>Hasil penilaian biasanya langsung menampilkan rincian poin tiap subtask secara instan (live feedback).</li>
+      </ul>
+    <li>ICPC (International Collegiate Programming Contest), biasanya dipakai untuk mahasiswa perguruan tinggi.</li>
+      <ul>
+        <li>Peserta berkompetisi dalam tim yang terdiri dari 3 orang dengan hanya 1 komputer.</li>
+        <li>Sistem penilaian bersifat biner: Accepted (AC) bernilai 1 soal, tidak ada nilai parsial/subtask.</li>
+        <li>Menggunakan sistem penalti waktu: setiap submission yang salah sebelum akhirnya AC akan menambah penalti waktu (biasanya 20 menit per penolakan). Pemenang diurutkan berdasarkan jumlah soal terbanyak, lalu penalti waktu terkecil.</li>
+      </ul>
+  </ol>
+</details>
+
 ## Instalasi
 
 Judgels dipasang pada server yang sama dengan DOMjudge (`103.160.213.105`) menggunakan **Docker Compose**, bukan playbook Ansible resmi. Alasannya, playbook `provision.yml` ditulis untuk Ubuntu dan mengubah konfigurasi sistem yang sudah dipakai DOMjudge: menghapus site Nginx `default`, mengganti kata sandi `root` MySQL, mengaktifkan UFW dengan hanya membuka beberapa port, serta mengedit GRUB untuk mematikan cgroup v2 lalu me-*reboot* server. Percobaan menjalankan Ansible langsung dari server juga gagal pada task pertama (`Permission denied (publickey,password)`) sehingga tidak ada perubahan yang terjadi pada server.
