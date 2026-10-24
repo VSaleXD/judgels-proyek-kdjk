@@ -1,41 +1,15 @@
-<section align="center">
-  <img src="assets/logo.png" alt="Judgels Logo" width="280" style="margin-bottom: 1.5rem;"/>
-    <h1>Judgels</h1>
-    <p><strong>Projek Akhir Praktikum Komunikasi Data dan Jaringan Komputer</strong><br/>
-    Departemen Ilmu Komputer - IPB University<br/>
-    Hasil Deployment : https://cp-judgels.web.id
-    </a></p>
-    <p>Disusun oleh:</p>
-    <table align="center" style="margin-top: 1rem; text-align: left; border-collapse: collapse;">
-      <tr>
-        <th style="padding: 6px 16px; border: 1px solid #444;">Nama</th>
-        <th style="padding: 6px 16px; border: 1px solid #444;">NIM</th>
-      </tr>
-      <tr>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Ahmad Rafif Ilmany</strong></td>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241090</code></td>
-      </tr>
-      <tr>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Mochamad Aleandre Moulidouane</strong></td>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241105</code></td>
-      </tr>
-      <tr>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Rafael Federico Atantya</strong></td>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241108</code></td>
-      </tr>
-      <tr>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Aditya Cahyo Nugroho</strong></td>
-        <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241109</code></td>
-      </tr>
-    </table>
-  </div>
-   bagian ini nanti benerin ges!
-  <br/>
+<div align="center">
+
+<img width="280" alt="judgels" src="https://github.com/user-attachments/assets/a6867a4c-e321-410c-987d-27895fa6207e" />
+
+# JUDGELS
+    
   <nav aria-label="Navigation">
     <a href="#sekilas-tentang">Sekilas Tentang</a> |
     <a href="#perbandingan-judgels-dengan-aplikasi-sejenis">Perbandingan</a>
   </nav>
-</section>
+
+</div>
 
 ---
 
@@ -387,8 +361,33 @@ Judgels cocok bila dibutuhkan pengelolaan soal yang kaya fitur sekaligus kontes 
 
 2. https://judgels.toki.id/docs/introduction/
 
-3. https://judgels.toki.id/docs/deployment/concepts/
+Hasil Deployment : https://cp-judgels.web.id dan disusun oleh:
 
-4. https://judgels.toki.id/docs/deployment/installation/
+ <table align="center" style="margin-top: 1rem; text-align: left; border-collapse: collapse;">
+      <tr>
+        <th style="padding: 6px 16px; border: 1px solid #444;">Nama</th>
+        <th style="padding: 6px 16px; border: 1px solid #444;">NIM</th>
+      </tr>
+      <tr>
+        <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Ahmad Rafif Ilmany</strong></td>
+        <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241090</code></td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Mochamad Aleandre Moulidouane</strong></td>
+        <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241105</code></td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Rafael Federico Atantya</strong></td>
+        <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241108</code></td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 16px; border: 1px solid #444;"><strong>Aditya Cahyo Nugroho</strong></td>
+        <td style="padding: 6px 16px; border: 1px solid #444;"><code>M0403241109</code></td>
+      </tr>
+    </table>
 
-5. https://judgels.toki.id/docs/deployment/cheatsheet/
+4. https://judgels.toki.id/docs/deployment/concepts/
+
+5. https://judgels.toki.id/docs/deployment/installation/
+
+6. https://judgels.toki.id/docs/deployment/cheatsheet/
