@@ -4,7 +4,7 @@
 
 # JUDGELS
     
-[Sekilas Tentang](#sekilas-tentang) | [Instalasi](#instalasi) | [Maintenance](#maintenance) | [Otomatisasi](#otomatisasi-opsional) | [Perbandingan](#perbandingan-judgels-dengan-aplikasi-sejenis) | [Referensi](#referensi)
+[Sekilas Tentang](#sekilas-tentang) | [Instalasi](#instalasi) | [Maintenance](#maintenance) | [Otomatisasi](#otomatisasi-opsional) | [Pembahasan](#pembahasan) | [Referensi](#referensi)
 :---:|:---:|:---:|:---:|:---:|:---:
 
 </div>
@@ -622,22 +622,57 @@ $ sudo ./restore.sh ~/backup-judgels/judgels-backup-YYYY-MM-DD_HHMMSS.tar.gz
 
 ---
 
-# Perbandingan Judgels dengan Aplikasi Sejenis
+# Pembahasan
 [`^ kembali ke atas ^`](#)
+
+### Pendapat Tentang Judgels
+**Judgels** merupakan platform *programming contest system* dan *online judge* open-source yang sangat solid, matang, dan dirancang khusus untuk kebutuhan kompetisi pemrograman tingkat tinggi. Dikembangkan secara mandiri oleh Ikatan Alumni TOKI (IA-TOKI), platform ini menjadi tulang punggung ekosistem olimpiade informatika di Indonesia seperti TLX, OSN, hingga ajang internasional seperti APIO.
+
+Secara arsitektur, Judgels menggunakan pendekatan modern yang *decoupled*: frontend berupa Single Page Application (SPA) berbasis React, backend berbasis Java Dropwizard yang teruji menangani *throughput* tinggi, RabbitMQ sebagai message broker antrean penilaian, serta Isolate sebagai sandbox eksekusi kode peserta yang aman. Pengalaman menggunakan Judgels terasa sangat lengkap bagi penyelenggara kontes karena tidak hanya menyediakan sistem penilaian otomatis, tetapi juga mencakup pengelolaan siklus hidup soal (*problem repository*), paket test case, klarifikasi, papan skor (*scoreboard*), hingga pengawasan kontes secara terpadu.
+
+---
+
+### Kelebihan
+Judgels menawarkan berbagai keunggulan unggulan yang menjadikannya pilihan utama untuk ajang kompetisi kompetitif, diantaranya:
+- **Dukungan Format Kompetisi Ganda**: Mampu menyelenggarakan kontes dengan format **IOI** (penilaian parsial per-subtask dengan skor 0–100) maupun **ICPC** (sistem biner Accepted/Rejected dengan penalti waktu).
+- **Jenis Soal Sangat Lengkap**: Mendukung soal tipe *Batch* (standar I/O), *Interactive* (komunikasi dua arah juri-peserta), *Output-Only*, hingga *Functional/Grader* (peserta hanya mengimplementasikan fungsi seperti di LeetCode).
+- **Mekanisme Penilaian Fleksibel**: Menyediakan penilaian berbasis subtask berbobot, validator kustom (*custom checker*), serta *custom grader*.
+- **Keamanan Eksekusi Kode Tinggi**: Menggunakan sandbox kernel Linux (*Isolate*) untuk membatasi memori, waktu proses, pemanggilan *system call*, serta mencegah akses jaringan ilegal dari kode peserta.
+- **Arsitektur Terdistribusi & Skalabel**: Pemisahan antara server web dan worker penilaian via RabbitMQ memungkinkan penambahan mesin *grader* terpisah secara horizontal saat peserta kontes melonjak.
+- **Pengelolaan Soal yang Komprehensif**: Fitur manajemen versi soal, pengelompokan test case, preview deskripsi soal secara instan, serta integrasi manajemen pengguna berbasis peran (*roles*).
+
+---
+
+### Kekurangan
+Tentu saja, sebuah sistem kompleks juga memiliki beberapa kekurangan dan tantangan operasional, antara lain:
+- **Konsumsi Resource Cukup Besar**: Karena backend berjalan di atas Java Virtual Machine (JVM) dan membutuhkan layanan pendukung (MySQL & RabbitMQ), kebutuhan RAM server minimal 4 GB agar seluruh kontainer dapat beroperasi dengan lancar.
+- **Konfigurasi Sandbox Isolate Membutuhkan Penyesuaian**: Isolate secara bawaan dirancang untuk cgroup v1 pada Linux, sehingga ketika dijalankan di dalam kontainer Docker pada distro modern dengan cgroup v2, dibutuhkan script wrapper khusus agar eksekusi tidak menghasilkan *internal error*.
+- **Konfigurasi URL Client SPA Sensitif**: Frontend React SPA berjalan di sisi browser peserta, sehingga parameter `apiUrl` pada file `judgels-client.js` wajib dikonfigurasi secara tepat ke IP publik atau domain HTTPS backend untuk menghindari kendala CORS atau *connection refused*.
+- **Dokumentasi Deployment Mandiri Terbatas**: Panduan resmi bawaan lebih banyak berfokus pada playbook Ansible untuk instalasi bare-metal Ubuntu, sehingga pengguna Docker Compose perlu meracik orchestration dan urutan migrasi database secara mandiri.
+
+---
+
+### Perbandingan dengan Aplikasi Sejenis
+Jika dibandingkan dengan platform contest management dan online judge sejenis lainnya seperti **DOMjudge**, **CMS (Contest Management System)**, dan **DMOJ**, Judgels memiliki karakteristik dan keunggulan tersendiri:
 
 | Aspek | Judgels | DOMjudge | CMS (Contest Management System) | DMOJ |
 |---|---|---|---|---|
 | **Pengembang** | Ikatan Alumni TOKI | Komunitas DOMjudge | Komunitas CMS | Komunitas DMOJ |
-| **Konsep Utama** | Sistem pengelolaan soal dan kontes pemrograman | Sistem penjurian kontes pemrograman, terutama bergaya ICPC | Sistem terdistribusi untuk menyelenggarakan kontes pemrograman, terutama bergaya IOI | *Online judge* sekaligus platform kontes dan arsip soal |
+| **Konsep Utama** | Sistem pengelolaan soal dan kontes pemrograman lengkap | Sistem penjurian kontes pemrograman, terutama fokus ICPC | Sistem terdistribusi olimpiade pemrograman, fokus IOI | Platform online judge, arsip soal latihan, dan kontes |
 | **Model Deployment** | *Self-hosted*; Docker Compose dan skrip `setup.sh` | *Self-hosted*; server kontes dan satu atau lebih *judgehost* | *Self-hosted* di Linux; tersedia opsi Docker | *Self-hosted*; situs dan server penjurian dipasang sebagai komponen terpisah |
 | **Jenis Soal** | *Batch*, interaktif, *output-only*, dan *functional/grader*; mendukung subtask | Penjurian otomatis dengan bahasa dan validator yang dapat dikonfigurasi | Beragam jenis tugas, termasuk *batch*, *output-only*, dan interaktif | Soal berbasis input/output, interaktif, dan *signature-graded*; mendukung validator khusus |
 | **Format Kontes** | IOI dan ICPC; mendukung kontes virtual | ICPC dan penilaian parsial bergaya IOI | Beragam format tugas dan penilaian; dirancang untuk kebutuhan IOI | ICPC, IOI, AtCoder, dan ECOO; mendukung partisipasi virtual |
 | **Fitur Pengelolaan** | Versi soal, pengumuman, klarifikasi, papan skor, serta peran pengelola dan pengawas | Antarmuka juri dan tim, klarifikasi, papan skor, serta penjurian ulang | Antarmuka administrasi, impor kontes dan soal, serta layanan papan skor | Arsip soal, editorial, papan skor, rating opsional, dan pengelolaan pengguna |
-| **Skalabilitas** | Bergantung pada kapasitas dan konfigurasi deployment | Kapasitas penjurian dapat ditambah dengan *judgehost* | Arsitektur terdistribusi dengan layanan dan pekerja penjurian | Mendukung banyak server penjurian |
-| **Kebutuhan Pengelolaan** | Administrator menyiapkan dan memelihara deployment serta server | Administrator menyiapkan server kontes, database, dan *judgehost* | Administrator menyiapkan layanan CMS, PostgreSQL, dan lingkungan penjurian | Administrator menyiapkan situs, database, dan server penjurian |
-| **Biaya Perangkat Lunak** | Open Source, GPL-2.0; tetap memerlukan biaya infrastruktur | Open Source; tetap memerlukan biaya infrastruktur | Open Source; tetap memerlukan biaya infrastruktur | Open Source, AGPL-3.0; tetap memerlukan biaya infrastruktur |
+| **Skalabilitas** | Skalabilitas horizontal worker grader melalui RabbitMQ | Kapasitas penjurian dapat ditambah dengan *judgehost* | Arsitektur terdistribusi dengan layanan dan pekerja penjurian | Mendukung banyak server penjurian (*judge servers*) |
+| **Kebutuhan Pengelolaan** | Administrator menyiapkan deployment Docker / server dan database | Administrator menyiapkan server kontes, database, dan *judgehost* | Administrator menyiapkan layanan CMS, PostgreSQL, dan lingkungan penjurian | Administrator menyiapkan situs web, database, dan server penjurian |
+| **Biaya Perangkat Lunak** | Open Source (GPL-2.0); bebas biaya lisensi | Open Source (GPL-2.0); bebas biaya lisensi | Open Source (GPL-3.0); bebas biaya lisensi | Open Source (AGPL-3.0); bebas biaya lisensi |
 
-Judgels cocok bila dibutuhkan pengelolaan soal yang kaya fitur sekaligus kontes IOI dan ICPC. DOMjudge kuat untuk operasional kontes ICPC, CMS untuk kebutuhan olimpiade bergaya IOI, sedangkan DMOJ menggabungkan kontes dengan situs latihan dan arsip soal. Perbandingan ini didasarkan pada dokumentasi resmi Judgels, DOMjudge, CMS, dan DMOJ.
+**Ringkasan Perbandingan:**
+- **Judgels vs DOMjudge**: DOMjudge merupakan standar emas untuk kontes bergaya ICPC dengan antarmuka juri yang sangat fokus pada tim dan balon penanda, namun DOMjudge kurang fleksibel untuk tipe soal *interactive* atau *functional/grader* dengan subtask bertingkat yang lazim di olimpiade sains. Di sisi lain, Judgels sangat unggul dalam fleksibilitas jenis soal dan manajemen repositori soal.
+- **Judgels vs CMS**: CMS (*Contest Management System*) adalah sistem resmi yang dipakai pada International Olympiad in Informatics (IOI). CMS sangat tangguh untuk format IOI murni, tetapi konfigurasinya berbasis file Python/PostgreSQL yang cukup rumit dan tidak dirancang untuk kontes tim bergaya ICPC seperti Judgels.
+- **Judgels vs DMOJ**: DMOJ lebih ditujukan sebagai platform *problem archive* dan latihan publik harian (mirip Codeforces atau SPOJ) dengan rating pengguna. Sedangkan Judgels dirancang sebagai *event-driven contest management system* yang fokus pada kelancaran jalannya sesi kontes resmi.
+
+---
 
 # Referensi
 [`^ kembali ke atas ^`](#)
