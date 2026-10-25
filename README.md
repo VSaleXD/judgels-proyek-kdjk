@@ -4,8 +4,8 @@
 
 # JUDGELS
     
-[Sekilas Tentang](#sekilas-tentang) | [Instalasi](#instalasi) | [Maintenance](#maintenance) | [Perbandingan](#perbandingan-judgels-dengan-aplikasi-sejenis) | [Referensi](#referensi)
-:---:|:---:|:---:|:---:|:---:
+[Sekilas Tentang](#sekilas-tentang) | [Instalasi](#instalasi) | [Maintenance](#maintenance) | [Otomatisasi](#otomatisasi-opsional) | [Perbandingan](#perbandingan-judgels-dengan-aplikasi-sejenis) | [Referensi](#referensi)
+:---:|:---:|:---:|:---:|:---:|:---:
 
 </div>
 
@@ -338,9 +338,9 @@ Kalau kalian sudah mencoba membuat soal, test case, akun peserta, atau kontes di
 Jika kalian sudah memiliki domain sendiri dan ingin Judgels dapat diakses secara profesional melalui protokol aman HTTPS (port 443 standar tanpa perlu mengekspos port 5000 dan 9101 ke publik), berikut adalah tata cara konfigurasinya menggunakan Nginx Reverse Proxy dan Certbot:
 
 1. Buat 3 DNS A Record pada panel manajemen DNS domain kalian (misalnya DewaBiz atau Cloudflare) yang semuanya mengarah ke alamat IP server (contoh IP server: `103.160.213.105`):
-   - `cp-judgels.web.id` $ightarrow$ `103.160.213.105` (Antarmuka Web Peserta)
-   - `api.cp-judgels.web.id` $ightarrow$ `103.160.213.105` (API Server)
-   - `admin.cp-judgels.web.id` $ightarrow$ `103.160.213.105` (Antarmuka Admin)
+   - `cp-judgels.web.id` → `103.160.213.105` (Antarmuka Web Peserta)
+   - `api.cp-judgels.web.id` → `103.160.213.105` (API Server)
+   - `admin.cp-judgels.web.id` → `103.160.213.105` (Antarmuka Admin)
 
 2. Buka dan buat berkas konfigurasi *Virtual Host* Nginx baru di server VPS:
     ```bash
@@ -573,6 +573,53 @@ cd /opt/judgels
 docker compose pull
 docker compose up -d
 ```
+
+# Otomatisasi (opsional)
+[`^ kembali ke atas ^`](#)
+
+Jika kalian tidak ingin menjalankan setiap perintah instalasi, konfigurasi, maupun pencadangan secara manual satu per satu lewat terminal, kami sudah menyiapkan skrip shell otomasi praktis yang bisa langsung kalian gunakan:
+
+### 1. Skrip Otomatisasi Instalasi & Setup (`setup.sh`)
+Skrip [setup.sh](./setup.sh) akan otomatis mengurus seluruh tahapan persiapan Judgels di server kalian tanpa perlu ribet:
+- Membuat direktori kerja di `/opt/judgels`.
+- Menghasilkan kata sandi acak yang aman untuk MySQL, RabbitMQ, dan akun superadmin di berkas `.env`.
+- Mengonfigurasi `judgels-server.yml`, `judgels-client.js`, dan membuat berkas reverse proxy Nginx (`nginx-judgels.conf`).
+- Menjalankan seluruh kontainer Docker secara otomatis.
+
+Cara menjalankannya gampang banget:
+```bash
+$ chmod +x setup.sh
+$ sudo ./setup.sh cp-judgels.web.id 3.0.0
+```
+*(Kalian bisa ganti `cp-judgels.web.id` dengan domain milik kalian sendiri).*
+
+### 2. Skrip Otomatisasi Pencadangan Data (`backup.sh`)
+Untuk menjaga keamanan data kontes, soal, dan akun pengguna dari hal-hal yang tidak diinginkan, kalian bisa menjalankan skrip [backup.sh](./backup.sh) kapan saja (atau dijadwalkan mingguan via `crontab`):
+- Melakukan *dump* basis data MySQL (`database.sql`).
+- Menyalin seluruh folder berkas data server (soal, test case, dan submission).
+- Menyalin konfigurasi `.env`.
+- Mengompres semuanya menjadi satu berkas arsip `.tar.gz` yang rapi dengan cap waktu otomatis di folder `~/backup-judgels/`.
+
+Cara menjalankannya:
+```bash
+$ chmod +x backup.sh
+$ sudo ./backup.sh
+```
+
+### 3. Skrip Otomatisasi Pemulihan Data (`restore.sh`)
+Nah, semisal server mengalami kendala atau kalian ingin mengembalikan data dari hasil pencadangan sebelumnya, cukup gunakan skrip [restore.sh](./restore.sh):
+- Otomatis mengekstrak arsip cadangan.
+- Mengimpor kembali seluruh tabel basis data MySQL.
+- Memulihkan seluruh berkas data server dan memperbaiki hak aksesnya.
+- Memulai ulang kontainer server Judgels.
+
+Cara menjalankannya:
+```bash
+$ chmod +x restore.sh
+$ sudo ./restore.sh ~/backup-judgels/judgels-backup-YYYY-MM-DD_HHMMSS.tar.gz
+```
+
+---
 
 # Perbandingan Judgels dengan Aplikasi Sejenis
 [`^ kembali ke atas ^`](#)
