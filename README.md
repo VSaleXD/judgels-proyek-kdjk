@@ -241,14 +241,15 @@ Kalau kalian sudah mencoba membuat soal, test case, akun peserta, atau kontes di
 
 3. Kirimkan seluruh folder proyek `judgels` beserta file backup dari komputer lokal ke server VPS kalian menggunakan perintah `scp`:
     ```bash
-    $ scp -r ~/Documents/Kuliah/kdjk/Proyek/judgels azureuser@70.153.139.60:~/
+    $ scp -r /path/ke/folder/judgels <username>@<IP_VPS>:~/
     ```
+    *(Ganti `/path/ke/folder/judgels` dengan path folder proyek di komputer lokal kalian, serta ganti `<username>` dan `<IP_VPS>` sesuai dengan akun dan IP publik server VPS kalian).*
 
     ![Transfer Berkas ke VPS](assets/screenshots/21-scp-ke-vps.jpeg)
 
 4. Masuk ke dalam server VPS melalui SSH:
     ```bash
-    $ ssh azureuser@70.153.139.60
+    $ ssh <username>@<IP_VPS>
     ```
 
     ![Login SSH VPS](assets/screenshots/22-ssh-ke-vps.jpeg)
@@ -263,9 +264,9 @@ Kalau kalian sudah mencoba membuat soal, test case, akun peserta, atau kontes di
 
 6. Sesuaikan konfigurasi `apiUrl` pada `conf/judgels-client.js` agar menggunakan alamat IP publik VPS kalian:
     ```bash
-    $ sed -i 's/localhost/70.153.139.60/g' conf/judgels-client.js
+    $ sed -i 's/localhost/<IP_VPS>/g' conf/judgels-client.js
     ```
-    *(Catatan: pastikan formatnya murni IP address atau domain ya, jangan menyertakan username SSH).*
+    *(Catatan: ganti `<IP_VPS>` dengan alamat IP publik server VPS kalian. Pastikan formatnya murni IP address atau domain ya, jangan menyertakan username SSH).*
 
     ![Ubah API URL ke IP VPS](assets/screenshots/25-ganti-api-url-ip-vps.jpeg)
 
@@ -322,11 +323,11 @@ Kalau kalian sudah mencoba membuat soal, test case, akun peserta, atau kontes di
     ![Restart Server dan Grader](assets/screenshots/33-vps-restore-selesai-restart.jpeg)
 
 13. Buka alamat IP VPS di browser untuk memastikan data berhasil dipindahkan:
-    - Web Peserta: `http://70.153.139.60:5000`
+    - Web Peserta: `http://<IP_VPS>:5000`
 
       ![Tampilan Web Peserta via IP VPS](assets/screenshots/34-vps-tampilan-client-ip.jpeg)
 
-    - Web Administrasi: `http://70.153.139.60:9101/login`
+    - Web Administrasi: `http://<IP_VPS>:9101/login`
 
       ![Tampilan Web Admin via IP VPS](assets/screenshots/35-vps-tampilan-admin-ip.jpeg)
 
