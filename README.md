@@ -4,16 +4,15 @@
 
 # JUDGELS
     
-  <nav aria-label="Navigation">
-    <a href="#sekilas-tentang">Sekilas Tentang</a> |
-    <a href="#perbandingan-judgels-dengan-aplikasi-sejenis">Perbandingan</a>
-  </nav>
+[Sekilas Tentang](#sekilas-tentang) | [Instalasi](#instalasi) | [Maintenance](#maintenance) | [Perbandingan](#perbandingan-judgels-dengan-aplikasi-sejenis) | [Referensi](#referensi)
+:---:|:---:|:---:|:---:|:---:
 
 </div>
 
 ---
 
-## Sekilas Tentang
+# Sekilas Tentang
+[`^ kembali ke atas ^`](#)
 
 **Judgels** adalah platform open-source untuk pengelolaan competitive programming. Dikembangkan secara aktif oleh Ikatan Alumni Tim Olimpiade Komputer Indonesia (IA-TOKI), untuk perkembangan terbaru (termasuk versi terbaru/TLS) dapat dilihat di [repo resmi Judgels](https://github.com/ia-toki/judgels).
 
@@ -67,165 +66,401 @@ Berdasarkan beberapa fitur/tipe yang didukung oleh Judgels, maka dapat disimpulk
   </ol>
 </details>
 
-## Instalasi
+# Instalasi
+[`^ kembali ke atas ^`](#)
 
-Judgels dipasang pada server yang sama dengan DOMjudge (`103.160.213.105`) menggunakan **Docker Compose**, bukan playbook Ansible resmi. Alasannya, playbook `provision.yml` ditulis untuk Ubuntu dan mengubah konfigurasi sistem yang sudah dipakai DOMjudge: menghapus site Nginx `default`, mengganti kata sandi `root` MySQL, mengaktifkan UFW dengan hanya membuka beberapa port, serta mengedit GRUB untuk mematikan cgroup v2 lalu me-*reboot* server. Percobaan menjalankan Ansible langsung dari server juga gagal pada task pertama (`Permission denied (publickey,password)`) sehingga tidak ada perubahan yang terjadi pada server.
+#### Kebutuhan Sistem :
+- **Sistem Operasi**: Linux (disarankan Arch Linux / Ubuntu 22.04 / Debian 12+), macOS, atau Windows (dengan WSL2).
+- **Docker Engine & Docker Compose**: Docker versi 24.0+ dengan plugin Docker Compose v2 (`docker compose`).
+- **Spesifikasi Perangkat Keras**: Minimal RAM 4 GB+ dan 2 CPU Core (agar seluruh kontainer database MySQL, server Judgels, client frontend, dan penilai grader berjalan lancar tanpa *out-of-memory*).
+- **Penyimpanan Bebas**: Minimal 10 GB ruang kosong untuk *image* Docker dan volume basis data.
+- **Port Jaringan**: Port `5000` (Judgels Client) dan `9101` (Judgels Server API) harus kosong serta tidak terpakai oleh layanan lain di host.
 
-Dengan Docker Compose, MySQL, RabbitMQ, Judgels Server, dan Judgels Client berjalan sebagai kontainer terisolasi. Semua port kontainer hanya di-*bind* ke `127.0.0.1`, dan satu-satunya perubahan pada layanan host adalah penambahan satu berkas *virtual host* Nginx baru.
+---
 
-> **Cakupan:** bagian ini mencakup *core stack* (Client, Server, MySQL, RabbitMQ). **Grader belum dipasang** pada tahap ini. Image grader memakai Isolate v1.10.1 yang membutuhkan cgroup v1, sehingga sebaiknya dijalankan di VM terpisah. Tanpa grader, antarmuka web dan panel admin dapat dipakai, tetapi pengiriman solusi peserta belum dinilai.
+#### Proses Instalasi :
+Proses instalasi dan setup Judgels ini kami bagi menjadi 3 skenario yang bisa kalian ikuti secara berurutan sesuai kebutuhan:
+- **[1. Instalasi Dasar Judgels di Lingkungan Lokal](#1-instalasi-dasar-judgels-di-lingkungan-lokal)**
+- **[2. Backup Data Judgels Lokal & Migrasi (Push) ke Server VPS](#2-backup-data-judgels-lokal--migrasi-push-ke-server-vps)**
+- **[3. Konfigurasi Domain & HTTPS (SSL Let's Encrypt)](#3-konfigurasi-domain--https-ssl-lets-encrypt)**
 
-### Prasyarat
+---
 
-| Komponen | Keterangan |
-| --- | --- |
-| Server | Debian GNU/Linux 13 (kernel 6.12.107), IP `103.160.213.105`, akses `root` lewat SSH (PuTTY) |
-| Layanan yang sudah ada | DOMjudge (kontainer `domjudge-domserver`, MariaDB, dan *judgehost*) dengan Nginx sebagai *web server* (site `default` dan `domjudge`) |
-| Docker | Docker Engine 26.1.5 dan Docker Compose 2.26.1 |
-| Nginx dan Certbot | Nginx sebagai *reverse proxy*, Certbot untuk sertifikat Let's Encrypt |
-| Domain | `cp-judgels.web.id` (DNS dikelola di DewaBiz) |
-| Port | `5000` (client) dan `9101` (server) harus kosong; port 80 dan 443 terbuka untuk Nginx |
+### 1. Instalasi Dasar Judgels di Lingkungan Lokal
+[`^ kembali ke atas ^`](#)
 
-Kebutuhan sumber daya yang disarankan dokumentasi Judgels untuk *core VM* adalah minimal 4 GB RAM dan 2 CPU.
+Pada tahap awal ini, kita akan memasang *stack* Judgels lengkap (Database MySQL, RabbitMQ, Judgels Server, Judgels Client, dan Judgels Grader) langsung di komputer lokal kita.
 
-**Pembagian domain:**
+1. Siapkan struktur direktori proyek `judgels` beserta folder `conf/`. Struktur folder dan berkas yang wajib ada adalah seperti pada gambar berikut:
 
-| Domain | Fungsi |
-| --- | --- |
-| `cp-judgels.web.id` | Antarmuka peserta (Judgels Client) |
-| `api.cp-judgels.web.id` | Endpoint API (Judgels Server) |
-| `admin.cp-judgels.web.id` | Antarmuka admin (Judgels Server) |
+    ![Struktur Folder](assets/screenshots/01-struktur-folder.jpeg)
 
-**Komponen yang dijalankan:**
+2. Buat berkas environment `.env` di dalam folder utama `judgels` untuk mendefinisikan konfigurasi kata sandi basis data MySQL, RabbitMQ, akun superadmin, serta port host:
 
-| Kontainer | Image | Akses |
-| --- | --- | --- |
-| `judgels-mysql` | `mysql:8.0` | Hanya jaringan internal Docker |
-| `rabbitmq` | `rabbitmq:3.13.7-management-alpine` | Hanya jaringan internal Docker |
-| `judgels-server-migrate` | `ghcr.io/ia-toki/judgels/server:3.0.0` | Menjalankan `db migrate` sekali, lalu berhenti |
-| `judgels-server` | `ghcr.io/ia-toki/judgels/server:3.0.0` | `127.0.0.1:9101` |
-| `judgels-client` | `ghcr.io/ia-toki/judgels/client:3.0.0` | `127.0.0.1:5000` |
+    ![Konfigurasi .env](assets/screenshots/02-env-config.jpeg)
 
-### Langkah Instalasi
+    ```bash
+    # Versi image Judgels resmi
+    JUDGELS_VERSION=3.0.0
 
-**1. Periksa kondisi server.** Login lewat SSH, lalu pastikan Docker tersedia, port tidak bentrok, dan ketahui *web server* yang dipakai:
+    # 1. Database (MySQL 8.0)
+    DB_ROOT_PASSWORD=rahasia_root_mysql_123
+    DB_NAME=judgels
+    DB_USER=judgels
+    DB_PASSWORD=rahasia_judgels_mysql_123
 
-```sh
-docker --version; docker compose version
-ss -ltnp | grep -E ':(5000|9101)\b'
-ls /etc/nginx/sites-enabled
-```
+    # 2. Message Broker (RabbitMQ)
+    RABBITMQ_USER=judgels
+    RABBITMQ_PASSWORD=rahasia_judgels_rabbit_123
 
-Perintah kedua harus menghasilkan keluaran kosong. Pada server ini, site Nginx yang sudah ada adalah `default` dan `domjudge`.
+    # 3. Akun Superadmin Awal
+    SUPERADMIN_PASSWORD=SuperAdminAman123!
 
-**2. Atur DNS.** Pada panel DNS Management DewaBiz, buat tiga *A record* berikut:
+    # 4. Port Host
+    CLIENT_PORT=5000
+    SERVER_PORT=9101
 
-| Host Name | Record Type | Address |
-| --- | --- | --- |
-| `@` | A | `103.160.213.105` |
-| `admin` | A | `103.160.213.105` |
-| `api` | A | `103.160.213.105` |
+    # 5. URL API untuk Frontend (wajib diakhiri /api/v2 pada image v3.0.0)
+    API_URL=http://localhost:9101/api/v2
 
-Setelah menyimpan, pastikan DNS aktif dari server:
+    # 6. Grader Setting (jumlah thread penilaian simultan)
+    GRADER_WORKER_THREADS=2
+    ```
 
-```sh
-getent hosts cp-judgels.web.id api.cp-judgels.web.id admin.cp-judgels.web.id
-```
+3. Buat berkas konfigurasi `conf/judgels-server.yml` untuk mengatur koneksi basis data MySQL, RabbitMQ, *data directory*, dan pengaturan CORS:
 
-Ketiga baris harus menampilkan `103.160.213.105`. Sertifikat Let's Encrypt gagal diterbitkan jika DNS belum aktif.
+    ![Konfigurasi Judgels Server](assets/screenshots/03-judgels-server-yml.jpeg)
 
-**3. Unggah berkas instalasi.** Folder instalasi harus berisi `docker-compose.yml` dan [setup.sh](./setup.sh). Unggah folder tersebut ke server, misalnya dengan `pscp` atau WinSCP:
+4. Buat berkas `conf/judgels-client.js` agar frontend React Judgels dapat menghubungi API backend server. Ingat ya, pada image client `3.0.0`, `apiUrl` wajib berakhiran `/api/v2`:
 
-```sh
-pscp -r "D:\path\ke\judgels-docker" root@103.160.213.105:/root/
-```
+    ![Konfigurasi Judgels Client](assets/screenshots/04-judgels-client-js.jpeg)
 
-**4. Jalankan skrip persiapan.** Skrip menerima domain utama dan versi Judgels sebagai argumen:
+    ```javascript
+    window.conf = {
+      mode: 'JUDGELS',
+      apiUrl: 'http://localhost:9101/api/v2',
+    };
+    ```
 
-```sh
-cd /root/judgels-docker
-chmod +x setup.sh
-./setup.sh cp-judgels.web.id 3.0.0
-```
+5. Buat berkas konfigurasi penilai `conf/judgels-grader.yml` agar penilai dapat terhubung ke antrean RabbitMQ dan membaca data soal dari server:
 
-Skrip [setup.sh](./setup.sh) harus dijalankan sebagai `root` (atau dengan `sudo`) dan tidak menyentuh Nginx, firewall, GRUB, maupun database yang sudah ada di host. Yang dilakukannya:
+    ![Konfigurasi Judgels Grader](assets/screenshots/05-judgels-grader-yml.jpeg)
 
-1. Membuat direktori kerja di `/opt/judgels` dan menyalin `docker-compose.yml` ke sana.
-2. Membuat kata sandi acak untuk MySQL, RabbitMQ, dan akun `superadmin`, lalu menyimpannya di `/opt/judgels/.env` (mode 600). Jika `.env` sudah ada, kata sandi tidak diganti; domain dan versi diperbarui.
-3. Menulis konfigurasi Server (`/opt/judgels/server/var/conf/judgels-server.yml`), Client (`/opt/judgels/client/var/conf/judgels-client.js` dengan `apiUrl: 'https://api.cp-judgels.web.id/v2'`), dan contoh *virtual host* Nginx (`/opt/judgels/nginx-judgels.conf`).
-4. Menampilkan kata sandi awal `superadmin` di akhir keluaran. **Catat kata sandi ini.**
+6. Siapkan skrip pembungkus `conf/isolate-wrapper.sh` untuk menjembatani eksekusi Isolate di dalam lingkungan Docker:
 
-Secara default skrip hanya menyiapkan berkas. Untuk langsung menjalankan Compose, gunakan `START=yes ./setup.sh cp-judgels.web.id 3.0.0`. `BASE_DIR` dapat diubah jika direktori kerja bukan `/opt/judgels`.
+    ![Skrip Isolate Wrapper](assets/screenshots/06-isolate-wrapper-sh.jpeg)
 
-**5. Jalankan kontainer.**
+7. Jangan lupa berikan izin eksekusi (*executable*) pada berkas `conf/isolate-wrapper.sh` tersebut:
+    ```bash
+    $ chmod +x conf/isolate-wrapper.sh
+    ```
 
-```sh
-cd /opt/judgels
-docker compose up -d
-docker compose ps
-```
+    ![Beri Izin Isolate Wrapper](assets/screenshots/07-chmod-isolate-wrapper.jpeg)
 
-Unduhan image dari `ghcr.io` memerlukan beberapa menit pada percobaan pertama. Urutan *start* diatur oleh Compose: MySQL dan RabbitMQ harus *healthy*, kemudian `judgels-server-migrate` menjalankan migrasi database sampai selesai, baru `judgels-server` dijalankan. Status yang diharapkan adalah `judgels-mysql` dan `rabbitmq` *healthy*, `judgels-server-migrate` `Exited (0)`, serta `judgels-server` dan `judgels-client` `Up`.
+8. Buat berkas `docker-compose.yml` yang mengatur orchestration seluruh layanan: `db` (MySQL 8.0), `rabbitmq`, `judgels-server`, `judgels-client`, dan `judgels-grader`:
 
-```sh
-docker logs judgels-server-migrate
-docker logs --tail=50 judgels-server
-```
+    ![Konfigurasi Docker Compose](assets/screenshots/08-docker-compose-yml.jpeg)
 
-**6. Uji layanan secara lokal.**
+9. Jalankan kontainer database MySQL dan message broker RabbitMQ terlebih dahulu di latar belakang:
+    ```bash
+    $ docker compose up -d db rabbitmq
+    ```
 
-```sh
-curl -I http://127.0.0.1:5000
-curl -s http://127.0.0.1:9101/api/v2/user-web/config
-```
+    ![Jalankan DB dan RabbitMQ](assets/screenshots/09-up-db-rabbitmq.jpeg)
 
-Perintah kedua mengembalikan JSON berisi `appName`, `appSlogan`, dan `homeBanner`.
+10. **Catatan Penting: Mengatasi Kendala Waktu Inisialisasi Database (Error Connection Refused)**  
+    Ketika kita baru saja menjalankan `docker compose up -d db rabbitmq`, kontainer MySQL baru pertama kali dibuat dari volume kosong. MySQL membutuhkan waktu lebih lama sekitar 20-30 detik untuk inisialisasi direktori internal dan membuat sistem berkasnya. Kalau kita langsung menjalankan migrasi database (`docker compose run --rm judgels-server db migrate`), maka akan muncul error `java.net.ConnectException: Connection refused` seperti pada gambar berikut:
 
-**7. Pasang *virtual host* Nginx.** Salin konfigurasi yang dibuat skrip sebagai site baru. Site `default` dan `domjudge` tidak diubah:
+    ![Error DB Migrate](assets/screenshots/10-error-db-migrate.jpeg)
 
-```sh
-cp /opt/judgels/nginx-judgels.conf /etc/nginx/sites-available/judgels
-ln -s /etc/nginx/sites-available/judgels /etc/nginx/sites-enabled/judgels
-nginx -t && systemctl reload nginx
-```
+    Untuk mengatasinya gampang banget, kalian hanya perlu menunggu sekitar 20–30 detik sampai MySQL benar-benar siap, atau gunakan perintah berikut di terminal untuk menunggu secara otomatis sampai MySQL siap (*alive*):
+    ```bash
+    $ until docker exec judgels-db mysqladmin ping -u root -prahasia_root_mysql_123 --silent; do
+        sleep 3
+    done
+    ```
 
-Berkas tersebut berisi tiga blok `server`: domain peserta meneruskan ke `127.0.0.1:5000`, sedangkan domain API dan admin meneruskan ke `127.0.0.1:9101`. Aturan `rewrite` pada domain API menambahkan awalan `/api` ke *path*.
+    ![Menunggu MySQL Siap](assets/screenshots/13-solusi-wait-mysql-alive.jpeg)
 
-**8. Pasang sertifikat HTTPS.**
+11. Setelah MySQL selesai inisialisasi dan berstatus *alive*, baru deh kita jalankan proses migrasi database untuk membuat 171 tabel:
+    ```bash
+    $ docker compose run --rm judgels-server db migrate
+    ```
 
-```sh
-apt install -y certbot python3-certbot-nginx
-certbot --nginx -d cp-judgels.web.id -d api.cp-judgels.web.id -d admin.cp-judgels.web.id
-```
+    Tunggu sampai muncul laporan `Total change sets: 171` dan `Liquibase: Update has been successful`:
 
-Certbot menambahkan konfigurasi HTTPS dan pengalihan HTTP ke HTTPS pada blok *server* yang sesuai.
+    ![Migrasi Database Sukses](assets/screenshots/14-db-migrate-sukses.jpeg)
 
-**9. Verifikasi.**
+12. Setelah database siap dan migrasi sukses, jalankan seluruh kontainer Judgels lainnya (Server, Client, dan Grader):
+    ```bash
+    $ docker compose up -d
+    ```
 
-| Pengujian | Hasil yang diharapkan |
-| --- | --- |
-| `curl -si https://api.cp-judgels.web.id/v2/user-web/config` | `HTTP/1.1 200 OK` dengan JSON konfigurasi aplikasi |
-| Buka `https://admin.cp-judgels.web.id` | Halaman admin dapat dibuka; login sebagai `superadmin` dengan kata sandi dari langkah 4 |
-| Buka `https://cp-judgels.web.id` | Halaman utama Judgels tampil |
-| `docker ps` | Kontainer DOMjudge tetap berjalan seperti sebelum instalasi |
+    ![Menyalakan Semua Kontainer](assets/screenshots/15-up-compose-setelah-migrate.jpeg)
 
-**10. Amankan kredensial.** Berkas `/opt/judgels/.env` dan `/opt/judgels/server/var/conf/judgels-server.yml` berisi kata sandi. Jangan masukkan keduanya ke repositori Git. Ganti kata sandi `superadmin` setelah login pertama, lalu simpan salinan `.env` di tempat yang aman.
+13. Konfigurasikan hak kepemilikan folder data dan pasang `isolate-wrapper` ke dalam kontainer grader agar sistem penilaian dapat berjalan:
+    ```bash
+    $ docker exec -u 0 judgels-server chown -R judgels:nogroup /judgels/server/var/data
+    $ docker exec judgels-grader cp /judgels/isolate/bin/isolate /judgels/isolate/bin/isolate-real
+    $ docker exec judgels-grader cp /conf/isolate-wrapper.sh /judgels/isolate/bin/isolate
+    $ docker exec judgels-grader chmod +x /judgels/isolate/bin/isolate
+    $ docker restart judgels-grader
+    ```
 
-### Instalasi Grader (belum dikerjakan)
+    ![Konfigurasi Grader](assets/screenshots/16-grader-setup-final.jpeg)
 
-Grader akan dipasang pada VM Ubuntu 24.04 terpisah agar pengaturan cgroup v1 yang dibutuhkan Isolate tidak mengubah server DOMjudge. Grader terhubung ke RabbitMQ pada Core untuk menerima tugas penilaian dan mengambil *test case* dari Judgels Server. Langkah ini akan ditambahkan setelah dikerjakan.
+14. Uji instalasi lokal kalian dengan membuka peramban web:
+    - Buka antarmuka peserta di `http://localhost:5000`
 
-### Pemecahan Masalah
+      ![Tampilan Web Peserta Lokal](assets/screenshots/17-tampilan-web-client-localhost.jpeg)
 
-| Gejala | Penyebab dan solusi |
-| --- | --- |
-| Ansible: `Permission denied (publickey,password)` | Ansible berjalan tanpa interaksi sehingga tidak dapat memakai kata sandi SSH, sedangkan kunci SSH belum terdaftar. Jalur ini tidak dipakai karena alasan yang dijelaskan di awal bagian ini. |
-| Halaman peserta menampilkan "Something went wrong"; Console browser: `blocked by CORS policy`, `/user-web/config` | Pastikan `apiUrl` di `judgels-client.js` berakhiran `/v2`: `https://api.cp-judgels.web.id/v2`. Image client v3.0.0 memanggil `${apiUrl}/user-web/config`. Setelah mengubahnya, muat ulang dengan Ctrl+Shift+R. |
-| `setup.sh` berhenti dengan pesan port 5000 atau 9101 terpakai | Port dipakai proses lain. Cari prosesnya dengan `ss -ltnp | grep :<port>`. |
-| Certbot gagal memverifikasi domain | DNS belum aktif atau belum mengarah ke `103.160.213.105`. Periksa dengan `getent hosts <domain>` dan tunggu propagasi. |
-| `judgels-server` tidak mau *start* | Migrasi belum selesai atau gagal. Periksa `docker logs judgels-server-migrate` dan status kontainer `judgels-mysql`. |
+    - Buka antarmuka administrasi di `http://localhost:9101/login`
 
-## Maintenance
+      ![Tampilan Web Admin Lokal](assets/screenshots/18-tampilan-web-admin-localhost.jpeg)
+
+---
+
+### 2. Backup Data Judgels Lokal & Migrasi (Push) ke Server VPS
+[`^ kembali ke atas ^`](#)
+
+Kalau kalian sudah mencoba membuat soal, test case, akun peserta, atau kontes di komputer lokal dan ingin memindahkan seluruh data tersebut ke server VPS tanpa perlu repot setup ulang dari nol, kalian bisa mengikuti langkah backup dan push berikut:
+
+1. Lakukan pencadangan (*dump*) basis data MySQL lokal ke dalam berkas `database.sql`:
+    ```bash
+    $ docker exec judgels-db mysqldump -u root -prahasia_root_mysql_123 judgels > database.sql
+    ```
+
+    ![Backup Database SQL](assets/screenshots/19-backup-mysqldump.jpeg)
+
+2. Salin (*backup*) seluruh direktori data server lokal (yang berisi berkas soal, test case, dan submission):
+    ```bash
+    $ docker cp judgels-server:/judgels/server/var/data ./server_data_backup
+    ```
+
+    ![Backup Direktori Data Server](assets/screenshots/20-backup-server-data.jpeg)
+
+3. Kirimkan seluruh folder proyek `judgels` beserta berkas backup dari komputer lokal ke server VPS kalian menggunakan perintah `scp`:
+    ```bash
+    $ scp -r ~/Documents/Kuliah/kdjk/Proyek/judgels azureuser@70.153.139.60:~/
+    ```
+
+    ![Transfer Berkas ke VPS](assets/screenshots/21-scp-ke-vps.jpeg)
+
+4. Masuk ke dalam server VPS melalui SSH:
+    ```bash
+    $ ssh azureuser@70.153.139.60
+    ```
+
+    ![Login SSH VPS](assets/screenshots/22-ssh-ke-vps.jpeg)
+    ![Terminal VPS](assets/screenshots/23-vps-terminal-masuk.jpeg)
+
+5. Pindah ke direktori `judgels` yang telah diunggah di server VPS:
+    ```bash
+    $ cd judgels
+    ```
+
+    ![Masuk Folder Judgels di VPS](assets/screenshots/24-masuk-folder-judgels-vps.jpeg)
+
+6. Sesuaikan konfigurasi `apiUrl` pada `conf/judgels-client.js` agar menggunakan alamat IP publik VPS kalian:
+    ```bash
+    $ sed -i 's/localhost/70.153.139.60/g' conf/judgels-client.js
+    ```
+    *(Catatan: pastikan formatnya murni IP address atau domain ya, jangan menyertakan username SSH).*
+
+    ![Ubah API URL ke IP VPS](assets/screenshots/25-ganti-api-url-ip-vps.jpeg)
+
+7. Pastikan port `5000` dan `9101` di server VPS belum terpakai oleh proses lain:
+    ```bash
+    $ sudo ss -tulpn | grep -E ':(5000|9101)'
+    ```
+
+    ![Periksa Port di VPS](assets/screenshots/26-cek-port-bentrok-vps.jpeg)
+
+8. Jalankan kontainer database `db` dan `rabbitmq` di server VPS:
+    ```bash
+    $ docker compose up -d db rabbitmq
+    ```
+
+    ![Nyalakan DB dan RabbitMQ di VPS](assets/screenshots/27-vps-up-db-rabbitmq.jpeg)
+
+9. Tunggu hingga MySQL di VPS selesai inisialisasi dan siap (*alive*):
+    ```bash
+    $ until docker exec judgels-db mysqladmin ping -u root -prahasia_root_mysql_123 --silent; do
+        sleep 3
+    done
+    ```
+
+    ![Tunggu MySQL VPS Siap](assets/screenshots/28-vps-wait-mysql-alive.jpeg)
+
+10. Pulihkan (*restore*) database dari berkas cadangan `database.sql` yang kita bawa dari lokal:
+    ```bash
+    $ docker exec -i judgels-db mysql -u root -prahasia_root_mysql_123 judgels < database.sql
+    ```
+    *(Dengan cara ini, kita tidak perlu menjalankan `db migrate` lagi karena seluruh 171 tabel beserta data soal dan akun superadmin langsung masuk otomatis).*
+
+    ![Restore Database di VPS](assets/screenshots/29-vps-restore-database.jpeg)
+
+11. Jalankan seluruh layanan kontainer lainnya di server VPS:
+    ```bash
+    $ docker compose up -d
+    ```
+
+    ![Jalankan Seluruh Layanan di VPS](assets/screenshots/30-vps-compose-up-d.jpeg)
+    ![Seluruh Kontainer Berjalan di VPS](assets/screenshots/31-vps-compose-all-started.jpeg)
+
+12. Pulihkan folder data server dan siapkan `isolate-wrapper` pada grader di VPS:
+    ```bash
+    $ docker cp ./server_data_backup/. judgels-server:/judgels/server/var/data/
+    $ docker exec -u 0 judgels-server chown -R judgels:nogroup /judgels/server/var/data
+    $ docker exec judgels-grader cp /judgels/isolate/bin/isolate /judgels/isolate/bin/isolate-real
+    $ docker exec judgels-grader cp /conf/isolate-wrapper.sh /judgels/isolate/bin/isolate
+    $ docker exec judgels-grader chmod +x /judgels/isolate/bin/isolate
+    $ docker restart judgels-server judgels-grader
+    ```
+
+    ![Restore Data Server dan Setup Grader](assets/screenshots/32-vps-restore-server-data-grader.jpeg)
+    ![Restart Server dan Grader](assets/screenshots/33-vps-restore-selesai-restart.jpeg)
+
+13. Buka alamat IP VPS di peramban web untuk memastikan data berhasil dipindahkan:
+    - Web Peserta: `http://70.153.139.60:5000`
+
+      ![Tampilan Web Peserta via IP VPS](assets/screenshots/34-vps-tampilan-client-ip.jpeg)
+
+    - Web Administrasi: `http://70.153.139.60:9101/login`
+
+      ![Tampilan Web Admin via IP VPS](assets/screenshots/35-vps-tampilan-admin-ip.jpeg)
+
+---
+
+### 3. Konfigurasi Domain & HTTPS (SSL Let's Encrypt)
+[`^ kembali ke atas ^`](#)
+
+Jika kalian sudah memiliki domain sendiri dan ingin Judgels dapat diakses secara profesional melalui protokol aman HTTPS (port 443 standar tanpa perlu mengekspos port 5000 dan 9101 ke publik), berikut adalah tata cara konfigurasinya menggunakan Nginx Reverse Proxy dan Certbot:
+
+1. Buat 3 DNS A Record pada panel manajemen DNS domain kalian (misalnya DewaBiz atau Cloudflare) yang semuanya mengarah ke alamat IP server (contoh IP server: `103.160.213.105`):
+   - `cp-judgels.web.id` $ightarrow$ `103.160.213.105` (Antarmuka Web Peserta)
+   - `api.cp-judgels.web.id` $ightarrow$ `103.160.213.105` (API Server)
+   - `admin.cp-judgels.web.id` $ightarrow$ `103.160.213.105` (Antarmuka Admin)
+
+2. Buka dan buat berkas konfigurasi *Virtual Host* Nginx baru di server VPS:
+    ```bash
+    $ sudo nano /etc/nginx/sites-available/judgels
+    ```
+
+    ![Edit VHost Nginx](assets/screenshots/36-edit-vhost-nginx.jpeg)
+
+3. Masukkan konfigurasi reverse proxy berikut untuk mengarahkan masing-masing subdomain ke port kontainer yang sesuai:
+
+    ![Konfigurasi VHost Nginx](assets/screenshots/37-isi-konfigurasi-vhost-nginx.jpeg)
+
+    ```nginx
+    # --- 1. Peserta (Frontend Client) ---
+    server {
+        listen 80;
+        listen [::]:80;
+        server_name cp-judgels.web.id;
+
+        location / {
+            include proxy_params;
+            proxy_pass http://127.0.0.1:5000;
+            proxy_set_header Connection "";
+            proxy_http_version 1.1;
+            proxy_buffering off;
+            client_max_body_size 512M;
+        }
+    }
+
+    # --- 2. API Backend ---
+    server {
+        listen 80;
+        listen [::]:80;
+        server_name api.cp-judgels.web.id;
+        access_log off;
+
+        location ~ ^(/api)?/v[0-9]+/ {
+            rewrite ^(?:/api)?(.*) /api$1 break;
+            include proxy_params;
+            proxy_pass http://127.0.0.1:9101;
+            proxy_set_header Connection "";
+            proxy_http_version 1.1;
+            proxy_buffering off;
+            client_max_body_size 512M;
+        }
+    }
+
+    # --- 3. Antarmuka Admin Backend ---
+    server {
+        listen 80;
+        listen [::]:80;
+        server_name admin.cp-judgels.web.id;
+        access_log off;
+
+        location / {
+            include proxy_params;
+            proxy_pass http://127.0.0.1:9101;
+            proxy_set_header Connection "";
+            proxy_http_version 1.1;
+            proxy_buffering off;
+            client_max_body_size 512M;
+        }
+    }
+    ```
+
+4. Buat tautan simbolis ke `sites-enabled`, periksa sintaks konfigurasi, dan muat ulang layanan Nginx:
+    ```bash
+    $ sudo ln -sf /etc/nginx/sites-available/judgels /etc/nginx/sites-enabled/
+    $ sudo nginx -t
+    $ sudo systemctl reload nginx
+    ```
+
+    ![Enable VHost Nginx](assets/screenshots/38-enable-vhost-dan-reload-nginx.jpeg)
+    ![Nginx Syntax OK](assets/screenshots/39-test-nginx-berhasil.jpeg)
+
+5. Pasang sertifikat SSL gratis dari Let's Encrypt menggunakan Certbot:
+    ```bash
+    $ sudo certbot --nginx -d cp-judgels.web.id -d api.cp-judgels.web.id -d admin.cp-judgels.web.id
+    ```
+
+    ![Jalankan Certbot SSL](assets/screenshots/40-perintah-certbot-ssl.jpeg)
+
+    *(Jika sertifikat sudah pernah dibuat sebelumnya pada server ini, pilih opsi `1: Attempt to reinstall this existing certificate`)*. Certbot akan otomatis memperbarui blok server Nginx dengan konfigurasi SSL dan pengalihan otomatis HTTP ke HTTPS:
+
+    ![Certbot Reinstall Berhasil](assets/screenshots/41-proses-certbot-reinstall.jpeg)
+
+6. Masuk ke direktori Judgels di server dan sesuaikan berkas `conf/judgels-client.js`:
+    ```bash
+    $ cd /opt/judgels
+    $ nano conf/judgels-client.js
+    ```
+
+    ![Buka Konfigurasi Client](assets/screenshots/42-masuk-folder-edit-client.jpeg)
+
+    Ubah nilai `apiUrl` agar menggunakan protokol HTTPS dan domain API:
+    ```javascript
+    window.conf = {
+      mode: 'JUDGELS',
+      apiUrl: 'https://api.cp-judgels.web.id/v2',
+    };
+    ```
+
+    ![Ubah API URL ke HTTPS](assets/screenshots/43-update-api-url-https-domain.jpeg)
+
+7. Mulai ulang kontainer client Judgels agar perubahan konfigurasi diterapkan:
+    ```bash
+    $ docker compose restart judgels-client
+    ```
+
+    ![Restart Judgels Client](assets/screenshots/44-restart-client-judgels.jpeg)
+
+8. Selesai! Sekarang kalian dapat mengakses Judgels secara aman dengan HTTPS melalui domain kalian:
+   - Antarmuka Peserta: `https://cp-judgels.web.id`
+   - Antarmuka Administrasi: `https://admin.cp-judgels.web.id`
+   - Endpoint API: `https://api.cp-judgels.web.id/v2/user-web/config`
+
+---
+
+# Maintenance
+[`^ kembali ke atas ^`](#)
 
 Berbeda dengan aplikasi statis, [**Judgels**](https://www.google.com/search?q=https%3A%2F%2Fjudgels.toki.id%2Fdocs%2Fdeployment%2Fconcepts%2F) menyimpan data kontes, akun pengguna, soal, dan hasil penilaian di dalam database **MySQL** (`judgels`), sedangkan berkas pengiriman kode peserta (*submission files*), *test case*, serta foto profil disimpan pada disk lokal (`/opt/judgels/server/var/data/`). Oleh karena itu, prosedur pemeliharaan mencakup pencadangan basis data dan berkas data, pembersihan log, serta pemantauan layanan dan antrean penjurian.
 
@@ -339,7 +574,8 @@ docker compose pull
 docker compose up -d
 ```
 
-## Perbandingan Judgels dengan Aplikasi Sejenis
+# Perbandingan Judgels dengan Aplikasi Sejenis
+[`^ kembali ke atas ^`](#)
 
 | Aspek | Judgels | DOMjudge | CMS (Contest Management System) | DMOJ |
 |---|---|---|---|---|
@@ -355,7 +591,8 @@ docker compose up -d
 
 Judgels cocok bila dibutuhkan pengelolaan soal yang kaya fitur sekaligus kontes IOI dan ICPC. DOMjudge kuat untuk operasional kontes ICPC, CMS untuk kebutuhan olimpiade bergaya IOI, sedangkan DMOJ menggabungkan kontes dengan situs latihan dan arsip soal. Perbandingan ini didasarkan pada dokumentasi resmi Judgels, DOMjudge, CMS, dan DMOJ.
 
-## Referensi
+# Referensi
+[`^ kembali ke atas ^`](#)
 
 1. https://github.com/ia-toki/judgels
 
