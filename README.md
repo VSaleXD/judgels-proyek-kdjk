@@ -4,8 +4,8 @@
 
 # JUDGELS
     
-[Sekilas Tentang](#sekilas-tentang) | [Instalasi](#instalasi) | [Maintenance](#maintenance) | [Otomatisasi](#otomatisasi-opsional) | [Pembahasan](#pembahasan) | [Referensi](#referensi)
-:---:|:---:|:---:|:---:|:---:|:---:
+[Sekilas Tentang](#sekilas-tentang) | [Instalasi](#instalasi) | [Maintenance](#maintenance) | [Otomatisasi](#otomatisasi-opsional) | [Cara Pemakaian](#cara-pemakaian) | [Pembahasan](#pembahasan) | [Referensi](#referensi)
+:---:|:---:|:---:|:---:|:---:|:---:|:---:
 
 </div>
 
@@ -173,7 +173,7 @@ Pada tahap awal ini, kita akan memasang *stack* Judgels lengkap (Database MySQL,
 
     ![Error DB Migrate](assets/screenshots/10-error-db-migrate.jpeg)
 
-    Untuk mengatasinya gampang banget, kalian hanya perlu menunggu sekitar 20–30 detik sampai MySQL benar-benar siap, atau gunakan perintah berikut di terminal untuk menunggu secara otomatis sampai MySQL siap (*alive*):
+    Untuk mengatasinya gampang banget, kalian hanya perlu menunggu sekitar 20-30 detik sampai MySQL benar-benar siap, atau gunakan perintah berikut di terminal untuk menunggu secara otomatis sampai MySQL siap (*alive*):
     ```bash
     $ until docker exec judgels-db mysqladmin ping -u root -prahasia_root_mysql_123 --silent; do
         sleep 3
@@ -622,38 +622,115 @@ $ sudo ./restore.sh ~/backup-judgels/judgels-backup-YYYY-MM-DD_HHMMSS.tar.gz
 
 ---
 
+# Cara Pemakaian
+[`^ kembali ke atas ^`](#)
+
+Setelah seluruh infrastruktur Judgels berhasil dipasang dan berjalan di VPS, berikut adalah panduan alur pemakaian lengkap yang kami bagi menjadi dua peran utama: **Pembuat Soal (Problem Setter / Juri)** yang mengelola soal dan berkas uji coba, serta **Peserta Kompetisi (Contestant)** yang mengirimkan kode solusi dan memeriksa status penilaian otomatis.
+
+---
+
+### 1. Alur Pembuat Soal (Problem Setter / Juri)
+[`^ kembali ke atas ^`](#)
+
+1. Buka antarmuka administrasi di `https://admin.cp-judgels.web.id/login`, masukkan username `superadmin` beserta kata sandi yang telah dibuat:
+
+    ![Login Admin](assets/screenshots/45-admin-login.jpeg)
+
+2. Setelah berhasil masuk ke dashboard, pilih menu **Problems** di bilah navigasi kiri untuk melihat daftar repositori soal, lalu klik tombol **New problem** di pojok kanan atas:
+
+    ![Bank Soal Judgels](assets/screenshots/46-bank-soal-new-problem.jpeg)
+
+3. Masukkan identitas soal berupa *Slug* (contoh: `boxes-of-apples`), catatan pengantar, serta bahasa awal soal (*English* atau *Indonesian*), kemudian klik tombol **Create**:
+
+    ![Form Buat Soal](assets/screenshots/47-form-buat-soal.jpeg)
+
+4. Masuk ke tab **Statements** untuk menyusun narasi soal, batas waktu/memori, format masukan dan keluaran, contoh uji coba (*sample cases*), serta rumus matematika berbasis LaTeX:
+
+    ![Editor Problem Statement](assets/screenshots/48-editor-problem-statement.jpeg)
+
+5. Pindah ke tab **Grading** > **Config** untuk mengatur batasan sumber daya eksekusi, seperti batas waktu CPU (*Time limit: 2000 ms*) dan alokasi memori (*Memory limit: 262144 KB* / 256 MB):
+
+    ![Konfigurasi Limit Penilaian](assets/screenshots/49-konfigurasi-batas-waktu-memori.jpeg)
+
+6. Buka tab **Test data** untuk mengunggah berkas uji coba masukan (`.in`) dan kunci jawaban benar (`.out` / `.ans`), baik diunggah per berkas maupun langsung dalam satu arsip `.zip`:
+
+    ![Upload Berkas Test Data](assets/screenshots/50-upload-test-data-in-out.jpeg)
+
+7. Kembali ke tab **Config**, gunakan fitur **Auto-populate test data based on filenames** agar sistem otomatis memetakan pasangan berkas `1.in` ke `1.out`, `2.in` ke `2.out`, lalu simpan perubahan dengan menekan tombol **Update**:
+
+    ![Pemetaan Test Cases](assets/screenshots/51-mapping-test-cases.jpeg)
+
+---
+
+### 2. Alur Peserta Kompetisi (Contestant / Pengguna)
+[`^ kembali ke atas ^`](#)
+
+1. Peserta mengakses antarmuka kompetisi publik melalui alamat `https://cp-judgels.web.id/login` dan masuk menggunakan akun kontestan (`peserta`):
+
+    ![Login Peserta](assets/screenshots/52-antarmuka-peserta-login.jpeg)
+
+2. Setelah berhasil masuk ke beranda kompetisi, peserta membuka kontes yang sedang aktif (**Simulasi Kontes KDJK 2026**) lalu memilih soal **A. Boxes of Apples** untuk membaca deskripsi permasalahan, batasan waktu/memori (*Time limit: 2s, Memory limit: 256 MB*), rumus matematika berbasis LaTeX, subtask penilaian, serta format masukan dan contoh keluaran (*sample test cases*):
+
+    ![Tampilan Lembar Soal Peserta](assets/screenshots/53-tampilan-lembar-soal.jpeg)
+
+3. Gulir ke bagian bawah lembar soal pada formulir **Submit solution**. Peserta memilih bahasa pemrograman yang digunakan (misalnya **C++20**), menempelkan kode program solusi pada editor bawaan atau mengunggah berkas solusi, kemudian menekan tombol **Submit**:
+
+    ![Form Pengiriman Solusi Kode](assets/screenshots/54-form-submit-jawaban.jpeg)
+
+4. **Kasus 1: Jawaban Benar (Accepted / AC 100)**  
+   Jika program menghasilkan keluaran yang benar di seluruh test case sesuai batas waktu dan memori, sistem mengembalikan status hijau **Accepted** dengan skor penuh 100/100 dan centang hijau pada seluruh pengujian:
+
+    ![Verdict Accepted AC](assets/screenshots/55-verdict-accepted-ac.jpeg)
+
+5. **Kasus 2: Jawaban Salah (Wrong Answer / WA 0)**  
+   Jika keluaran kode program peserta berbeda dari file kunci jawaban (`.out`), sistem memberikan status merah **Wrong Answer** dengan nilai 0:
+
+    ![Verdict Wrong Answer WA](assets/screenshots/56-verdict-wrong-answer-wa.jpeg)
+
+6. **Kasus 3: Kesalahan Eksekusi (Runtime Error / RTE 0)**  
+   Jika kode program peserta mengalami crash saat dieksekusi di dalam sandbox Isolate (misalnya pembagian dengan nol atau segmentation fault), sistem menandainya dengan status oranye **Runtime Error**:
+
+    ![Verdict Runtime Error RTE](assets/screenshots/57-verdict-runtime-error-rte.jpeg)
+
+7. **Pemantauan Terpadu di Halaman Submissions**  
+   Seluruh riwayat submisi peserta, perolehan nilai, waktu pengiriman, serta status masing-masing submission (Accepted, Wrong Answer, maupun Runtime Error) dapat dipantau langsung melalui menu **Submissions** pada bilah navigasi kontes:
+
+    ![Tabel Riwayat Pengiriman Solusi Peserta](assets/screenshots/58-tabel-riwayat-submissions.jpeg)
+
+---
+
 # Pembahasan
 [`^ kembali ke atas ^`](#)
 
 ### Pendapat Tentang Judgels
-**Judgels** merupakan platform *programming contest system* dan *online judge* open-source yang sangat solid, matang, dan dirancang khusus untuk kebutuhan kompetisi pemrograman tingkat tinggi. Dikembangkan secara mandiri oleh Ikatan Alumni TOKI (IA-TOKI), platform ini menjadi tulang punggung ekosistem olimpiade informatika di Indonesia seperti TLX, OSN, hingga ajang internasional seperti APIO.
+Judgels adalah platform sistem kontes pemrograman dan *online judge* open-source yang dikembangkan oleh Ikatan Alumni TOKI (IA-TOKI). Platform ini digunakan secara aktif pada ekosistem olimpiade informatika di Indonesia seperti TLX, OSN, hingga ajang internasional seperti APIO.
 
-Secara arsitektur, Judgels menggunakan pendekatan modern yang *decoupled*: frontend berupa Single Page Application (SPA) berbasis React, backend berbasis Java Dropwizard yang teruji menangani *throughput* tinggi, RabbitMQ sebagai message broker antrean penilaian, serta Isolate sebagai sandbox eksekusi kode peserta yang aman. Pengalaman menggunakan Judgels terasa sangat lengkap bagi penyelenggara kontes karena tidak hanya menyediakan sistem penilaian otomatis, tetapi juga mencakup pengelolaan siklus hidup soal (*problem repository*), paket test case, klarifikasi, papan skor (*scoreboard*), hingga pengawasan kontes secara terpadu.
+Dari segi arsitektur, Judgels menggunakan pemisahan komponen layanan: frontend berbasis React SPA, backend menggunakan Java Dropwizard, RabbitMQ untuk antrean penilaian kode, serta sandbox *Isolate* di Linux agar eksekusi kode peserta berjalan aman dan terisolasi. Fitur bawaannya sudah mencakup bank soal (*problem repository*), pengaturan berkas test case, klarifikasi, papan skor (*scoreboard*), dan pengelolaan peran panitia kontes.
 
 ---
 
 ### Kelebihan
-Judgels menawarkan berbagai keunggulan unggulan yang menjadikannya pilihan utama untuk ajang kompetisi kompetitif, diantaranya:
-- **Dukungan Format Kompetisi Ganda**: Mampu menyelenggarakan kontes dengan format **IOI** (penilaian parsial per-subtask dengan skor 0–100) maupun **ICPC** (sistem biner Accepted/Rejected dengan penalti waktu).
-- **Jenis Soal Sangat Lengkap**: Mendukung soal tipe *Batch* (standar I/O), *Interactive* (komunikasi dua arah juri-peserta), *Output-Only*, hingga *Functional/Grader* (peserta hanya mengimplementasikan fungsi seperti di LeetCode).
-- **Mekanisme Penilaian Fleksibel**: Menyediakan penilaian berbasis subtask berbobot, validator kustom (*custom checker*), serta *custom grader*.
-- **Keamanan Eksekusi Kode Tinggi**: Menggunakan sandbox kernel Linux (*Isolate*) untuk membatasi memori, waktu proses, pemanggilan *system call*, serta mencegah akses jaringan ilegal dari kode peserta.
-- **Arsitektur Terdistribusi & Skalabel**: Pemisahan antara server web dan worker penilaian via RabbitMQ memungkinkan penambahan mesin *grader* terpisah secara horizontal saat peserta kontes melonjak.
-- **Pengelolaan Soal yang Komprehensif**: Fitur manajemen versi soal, pengelompokan test case, preview deskripsi soal secara instan, serta integrasi manajemen pengguna berbasis peran (*roles*).
+Beberapa kelebihan Judgels yang kami temukan selama pengujian:
+- **Mendukung Dua Format Kontes Sekaligus**: Bisa menjalankan kontes format **IOI** (skor bertingkat per subtask dengan nilai 0-100) maupun **ICPC** (sistem biner Accepted/Rejected dengan penalti waktu).
+- **Pilihan Jenis Soal Lengkap**: Mendukung tipe soal standar I/O (*batch*), interaktif (komunikasi dua arah), *output-only*, hingga *functional/grader* (peserta cukup melengkapi fungsi).
+- **Mekanisme Penilaian Fleksibel**: Menyediakan penilaian berbasis subtask berbobot, validator khusus (*custom checker*), dan *custom grader*.
+- **Keamanan Eksekusi Kode**: Menggunakan sandbox *Isolate* untuk membatasi pemakaian memori, batas waktu CPU, system call berbahaya, dan memblokir akses jaringan ilegal dari kode peserta.
+- **Arsitektur Skalabel**: Pemisahan worker penilaian lewat RabbitMQ memudahkan penambahan mesin *grader* baru jika jumlah submisi peserta meningkat.
+- **Manajemen Soal Terstruktur**: Tersedia fitur versi soal, pengelompokan file test case otomatis, preview deskripsi soal langsung, serta pembagian hak akses pengguna berbasis peran (*roles*).
 
 ---
 
 ### Kekurangan
-Tentu saja, sebuah sistem kompleks juga memiliki beberapa kekurangan dan tantangan operasional, antara lain:
-- **Konsumsi Resource Cukup Besar**: Karena backend berjalan di atas Java Virtual Machine (JVM) dan membutuhkan layanan pendukung (MySQL & RabbitMQ), kebutuhan RAM server minimal 4 GB agar seluruh kontainer dapat beroperasi dengan lancar.
-- **Konfigurasi Sandbox Isolate Membutuhkan Penyesuaian**: Isolate secara bawaan dirancang untuk cgroup v1 pada Linux, sehingga ketika dijalankan di dalam kontainer Docker pada distro modern dengan cgroup v2, dibutuhkan script wrapper khusus agar eksekusi tidak menghasilkan *internal error*.
-- **Konfigurasi URL Client SPA Sensitif**: Frontend React SPA berjalan di sisi browser peserta, sehingga parameter `apiUrl` pada file `judgels-client.js` wajib dikonfigurasi secara tepat ke IP publik atau domain HTTPS backend untuk menghindari kendala CORS atau *connection refused*.
-- **Dokumentasi Deployment Mandiri Terbatas**: Panduan resmi bawaan lebih banyak berfokus pada playbook Ansible untuk instalasi bare-metal Ubuntu, sehingga pengguna Docker Compose perlu meracik orchestration dan urutan migrasi database secara mandiri.
+Beberapa kekurangan dan tantangan teknis saat melakukan deployment Judgels:
+- **Konsumsi Resource Server Cukup Tinggi**: Karena backend berjalan di atas JVM dan membutuhkan MySQL serta RabbitMQ, server membutuhkan RAM minimal 4 GB agar seluruh kontainer stabil tanpa kendala out-of-memory.
+- **Perlu Penyesuaian Sandbox Isolate di Docker**: Sandbox Isolate bawaan dirancang untuk cgroup v1. Ketika dijalankan di dalam kontainer Docker pada distro Linux modern dengan cgroup v2, dibutuhkan script wrapper khusus agar eksekusi tidak mengalami internal error.
+- **Konfigurasi URL Client SPA Sangat Ketat**: Frontend React SPA berjalan di browser sisi klien, sehingga parameter `apiUrl` pada `judgels-client.js` wajib dikonfigurasi tepat ke domain HTTPS atau IP publik backend agar tidak terhalang kebijakan CORS.
+- **Dokumentasi Deployment Mandiri Masih Minim**: Panduan resmi bawaan lebih banyak berfokus pada playbook Ansible untuk Ubuntu bare-metal, sehingga setup menggunakan Docker Compose perlu dirangkai dan diuji urutan migrasi databasenya secara mandiri.
 
 ---
 
 ### Perbandingan dengan Aplikasi Sejenis
-Jika dibandingkan dengan platform contest management dan online judge sejenis lainnya seperti **DOMjudge**, **CMS (Contest Management System)**, dan **DMOJ**, Judgels memiliki karakteristik dan keunggulan tersendiri:
+Jika dibandingkan dengan platform contest management dan online judge sejenis seperti **DOMjudge**, **CMS (Contest Management System)**, dan **DMOJ**, Judgels memiliki karakteristik tersendiri:
 
 | Aspek | Judgels | DOMjudge | CMS (Contest Management System) | DMOJ |
 |---|---|---|---|---|
@@ -668,9 +745,9 @@ Jika dibandingkan dengan platform contest management dan online judge sejenis la
 | **Biaya Perangkat Lunak** | Open Source (GPL-2.0); bebas biaya lisensi | Open Source (GPL-2.0); bebas biaya lisensi | Open Source (GPL-3.0); bebas biaya lisensi | Open Source (AGPL-3.0); bebas biaya lisensi |
 
 **Ringkasan Perbandingan:**
-- **Judgels vs DOMjudge**: DOMjudge merupakan standar emas untuk kontes bergaya ICPC dengan antarmuka juri yang sangat fokus pada tim dan balon penanda, namun DOMjudge kurang fleksibel untuk tipe soal *interactive* atau *functional/grader* dengan subtask bertingkat yang lazim di olimpiade sains. Di sisi lain, Judgels sangat unggul dalam fleksibilitas jenis soal dan manajemen repositori soal.
-- **Judgels vs CMS**: CMS (*Contest Management System*) adalah sistem resmi yang dipakai pada International Olympiad in Informatics (IOI). CMS sangat tangguh untuk format IOI murni, tetapi konfigurasinya berbasis file Python/PostgreSQL yang cukup rumit dan tidak dirancang untuk kontes tim bergaya ICPC seperti Judgels.
-- **Judgels vs DMOJ**: DMOJ lebih ditujukan sebagai platform *problem archive* dan latihan publik harian (mirip Codeforces atau SPOJ) dengan rating pengguna. Sedangkan Judgels dirancang sebagai *event-driven contest management system* yang fokus pada kelancaran jalannya sesi kontes resmi.
+- **Judgels vs DOMjudge**: DOMjudge fokus pada kontes tim bergaya ICPC dengan antarmuka juri dan balon penanda, namun kurang fleksibel untuk tipe soal interaktif atau subtask bertingkat yang umum di olimpiade sains. Sebaliknya, Judgels unggul dalam fleksibilitas jenis soal dan manajemen repositori soal.
+- **Judgels vs CMS**: CMS (*Contest Management System*) adalah sistem resmi yang dipakai pada International Olympiad in Informatics (IOI). CMS sangat andal untuk format IOI murni, tetapi konfigurasinya berbasis file Python/PostgreSQL yang cukup rumit dan tidak dirancang untuk kontes tim ICPC seperti Judgels.
+- **Judgels vs DMOJ**: DMOJ lebih ditujukan sebagai platform arsip soal dan latihan harian publik (mirip Codeforces atau SPOJ) dengan rating pengguna, sedangkan Judgels dirancang fokus untuk kelancaran sesi kontes resmi yang terjadwal.
 
 ---
 
