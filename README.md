@@ -72,8 +72,8 @@ Berdasarkan beberapa fitur/tipe yang didukung oleh Judgels, maka dapat disimpulk
 #### Kebutuhan Sistem :
 - **Sistem Operasi**: Linux (disarankan Arch Linux / Ubuntu 22.04 / Debian 12+), macOS, atau Windows (dengan WSL2).
 - **Docker Engine & Docker Compose**: Docker versi 24.0+ dengan plugin Docker Compose v2 (`docker compose`).
-- **Spesifikasi Perangkat Keras**: Minimal RAM 4 GB+ dan 2 CPU Core (agar seluruh kontainer database MySQL, server Judgels, client frontend, dan penilai grader berjalan lancar tanpa *out-of-memory*).
-- **Penyimpanan Bebas**: Minimal 10 GB ruang kosong untuk *image* Docker dan volume basis data.
+- **Spesifikasi Hardware**: Minimal RAM 4 GB+ dan 2 CPU Core (agar seluruh kontainer database MySQL, server Judgels, client frontend, dan grader berjalan lancar tanpa *out-of-memory*).
+- **Storage**: Minimal 10 GB free storage untuk image Docker dan volume database.
 - **Port Jaringan**: Port `5000` (Judgels Client) dan `9101` (Judgels Server API) harus kosong serta tidak terpakai oleh layanan lain di host.
 
 ---
@@ -91,11 +91,11 @@ Proses instalasi dan setup Judgels ini kami bagi menjadi 3 skenario yang bisa ka
 
 Pada tahap awal ini, kita akan memasang *stack* Judgels lengkap (Database MySQL, RabbitMQ, Judgels Server, Judgels Client, dan Judgels Grader) langsung di komputer lokal kita.
 
-1. Siapkan struktur direktori proyek `judgels` beserta folder `conf/`. Struktur folder dan berkas yang wajib ada adalah seperti pada gambar berikut:
+1. Siapkan struktur direktori proyek `judgels` beserta folder `conf/`. Struktur folder dan file yang wajib ada adalah seperti pada gambar berikut:
 
     ![Struktur Folder](assets/screenshots/01-struktur-folder.jpeg)
 
-2. Buat berkas environment `.env` di dalam folder utama `judgels` untuk mendefinisikan konfigurasi kata sandi basis data MySQL, RabbitMQ, akun superadmin, serta port host:
+2. Buat file environment `.env` di dalam folder utama `judgels` untuk mendefinisikan konfigurasi password database MySQL, RabbitMQ, akun superadmin, serta port host:
 
     ![Konfigurasi .env](assets/screenshots/02-env-config.jpeg)
 
@@ -127,11 +127,11 @@ Pada tahap awal ini, kita akan memasang *stack* Judgels lengkap (Database MySQL,
     GRADER_WORKER_THREADS=2
     ```
 
-3. Buat berkas konfigurasi `conf/judgels-server.yml` untuk mengatur koneksi basis data MySQL, RabbitMQ, *data directory*, dan pengaturan CORS:
+3. Buat file konfigurasi `conf/judgels-server.yml` untuk mengatur koneksi database MySQL, RabbitMQ, *data directory*, dan pengaturan CORS:
 
     ![Konfigurasi Judgels Server](assets/screenshots/03-judgels-server-yml.jpeg)
 
-4. Buat berkas `conf/judgels-client.js` agar frontend React Judgels dapat menghubungi API backend server. Ingat ya, pada image client `3.0.0`, `apiUrl` wajib berakhiran `/api/v2`:
+4. Buat file `conf/judgels-client.js` agar frontend React Judgels dapat menghubungi API backend server. Ingat ya, pada image client `3.0.0`, `apiUrl` wajib berakhiran `/api/v2`:
 
     ![Konfigurasi Judgels Client](assets/screenshots/04-judgels-client-js.jpeg)
 
@@ -142,7 +142,7 @@ Pada tahap awal ini, kita akan memasang *stack* Judgels lengkap (Database MySQL,
     };
     ```
 
-5. Buat berkas konfigurasi penilai `conf/judgels-grader.yml` agar penilai dapat terhubung ke antrean RabbitMQ dan membaca data soal dari server:
+5. Buat file konfigurasi grader `conf/judgels-grader.yml` agar grader dapat terhubung ke queue RabbitMQ dan membaca data soal dari server:
 
     ![Konfigurasi Judgels Grader](assets/screenshots/05-judgels-grader-yml.jpeg)
 
@@ -150,14 +150,14 @@ Pada tahap awal ini, kita akan memasang *stack* Judgels lengkap (Database MySQL,
 
     ![Skrip Isolate Wrapper](assets/screenshots/06-isolate-wrapper-sh.jpeg)
 
-7. Jangan lupa berikan izin eksekusi (*executable*) pada berkas `conf/isolate-wrapper.sh` tersebut:
+7. Jangan lupa berikan izin eksekusi (*executable*) pada file `conf/isolate-wrapper.sh` tersebut:
     ```bash
     $ chmod +x conf/isolate-wrapper.sh
     ```
 
     ![Beri Izin Isolate Wrapper](assets/screenshots/07-chmod-isolate-wrapper.jpeg)
 
-8. Buat berkas `docker-compose.yml` yang mengatur orchestration seluruh layanan: `db` (MySQL 8.0), `rabbitmq`, `judgels-server`, `judgels-client`, dan `judgels-grader`:
+8. Buat file `docker-compose.yml` yang mengatur orchestration seluruh layanan: `db` (MySQL 8.0), `rabbitmq`, `judgels-server`, `judgels-client`, dan `judgels-grader`:
 
     ![Konfigurasi Docker Compose](assets/screenshots/08-docker-compose-yml.jpeg)
 
@@ -169,7 +169,7 @@ Pada tahap awal ini, kita akan memasang *stack* Judgels lengkap (Database MySQL,
     ![Jalankan DB dan RabbitMQ](assets/screenshots/09-up-db-rabbitmq.jpeg)
 
 10. **Catatan Penting: Mengatasi Kendala Waktu Inisialisasi Database (Error Connection Refused)**  
-    Ketika kita baru saja menjalankan `docker compose up -d db rabbitmq`, kontainer MySQL baru pertama kali dibuat dari volume kosong. MySQL membutuhkan waktu lebih lama sekitar 20-30 detik untuk inisialisasi direktori internal dan membuat sistem berkasnya. Kalau kita langsung menjalankan migrasi database (`docker compose run --rm judgels-server db migrate`), maka akan muncul error `java.net.ConnectException: Connection refused` seperti pada gambar berikut:
+    Ketika kita baru saja menjalankan `docker compose up -d db rabbitmq`, kontainer MySQL baru pertama kali dibuat dari volume kosong. MySQL membutuhkan waktu lebih lama sekitar 20-30 detik untuk inisialisasi direktori internal dan membuat file system-nya. Kalau kita langsung menjalankan migrasi database (`docker compose run --rm judgels-server db migrate`), maka akan muncul error `java.net.ConnectException: Connection refused` seperti pada gambar berikut:
 
     ![Error DB Migrate](assets/screenshots/10-error-db-migrate.jpeg)
 
@@ -209,7 +209,7 @@ Pada tahap awal ini, kita akan memasang *stack* Judgels lengkap (Database MySQL,
 
     ![Konfigurasi Grader](assets/screenshots/16-grader-setup-final.jpeg)
 
-14. Uji instalasi lokal kalian dengan membuka peramban web:
+14. Uji instalasi lokal kalian dengan membuka browser:
     - Buka antarmuka peserta di `http://localhost:5000`
 
       ![Tampilan Web Peserta Lokal](assets/screenshots/17-tampilan-web-client-localhost.jpeg)
@@ -225,21 +225,21 @@ Pada tahap awal ini, kita akan memasang *stack* Judgels lengkap (Database MySQL,
 
 Kalau kalian sudah mencoba membuat soal, test case, akun peserta, atau kontes di komputer lokal dan ingin memindahkan seluruh data tersebut ke server VPS tanpa perlu repot setup ulang dari nol, kalian bisa mengikuti langkah backup dan push berikut:
 
-1. Lakukan pencadangan (*dump*) basis data MySQL lokal ke dalam berkas `database.sql`:
+1. Lakukan backup (*dump*) database MySQL lokal ke file `database.sql`:
     ```bash
     $ docker exec judgels-db mysqldump -u root -prahasia_root_mysql_123 judgels > database.sql
     ```
 
     ![Backup Database SQL](assets/screenshots/19-backup-mysqldump.jpeg)
 
-2. Salin (*backup*) seluruh direktori data server lokal (yang berisi berkas soal, test case, dan submission):
+2. Salin (*backup*) seluruh direktori data server lokal (yang berisi file soal, test case, dan submission):
     ```bash
     $ docker cp judgels-server:/judgels/server/var/data ./server_data_backup
     ```
 
     ![Backup Direktori Data Server](assets/screenshots/20-backup-server-data.jpeg)
 
-3. Kirimkan seluruh folder proyek `judgels` beserta berkas backup dari komputer lokal ke server VPS kalian menggunakan perintah `scp`:
+3. Kirimkan seluruh folder proyek `judgels` beserta file backup dari komputer lokal ke server VPS kalian menggunakan perintah `scp`:
     ```bash
     $ scp -r ~/Documents/Kuliah/kdjk/Proyek/judgels azureuser@70.153.139.60:~/
     ```
@@ -292,7 +292,7 @@ Kalau kalian sudah mencoba membuat soal, test case, akun peserta, atau kontes di
 
     ![Tunggu MySQL VPS Siap](assets/screenshots/28-vps-wait-mysql-alive.jpeg)
 
-10. Pulihkan (*restore*) database dari berkas cadangan `database.sql` yang kita bawa dari lokal:
+10. Restore database dari file backup `database.sql` yang kita bawa dari lokal:
     ```bash
     $ docker exec -i judgels-db mysql -u root -prahasia_root_mysql_123 judgels < database.sql
     ```
@@ -321,7 +321,7 @@ Kalau kalian sudah mencoba membuat soal, test case, akun peserta, atau kontes di
     ![Restore Data Server dan Setup Grader](assets/screenshots/32-vps-restore-server-data-grader.jpeg)
     ![Restart Server dan Grader](assets/screenshots/33-vps-restore-selesai-restart.jpeg)
 
-13. Buka alamat IP VPS di peramban web untuk memastikan data berhasil dipindahkan:
+13. Buka alamat IP VPS di browser untuk memastikan data berhasil dipindahkan:
     - Web Peserta: `http://70.153.139.60:5000`
 
       ![Tampilan Web Peserta via IP VPS](assets/screenshots/34-vps-tampilan-client-ip.jpeg)
@@ -342,7 +342,7 @@ Jika kalian sudah memiliki domain sendiri dan ingin Judgels dapat diakses secara
    - `api.cp-judgels.web.id` → `103.160.213.105` (API Server)
    - `admin.cp-judgels.web.id` → `103.160.213.105` (Antarmuka Admin)
 
-2. Buka dan buat berkas konfigurasi *Virtual Host* Nginx baru di server VPS:
+2. Buka dan buat file konfigurasi *Virtual Host* Nginx baru di server VPS:
     ```bash
     $ sudo nano /etc/nginx/sites-available/judgels
     ```
@@ -406,7 +406,7 @@ Jika kalian sudah memiliki domain sendiri dan ingin Judgels dapat diakses secara
     }
     ```
 
-4. Buat tautan simbolis ke `sites-enabled`, periksa sintaks konfigurasi, dan muat ulang layanan Nginx:
+4. Buat symlink ke `sites-enabled`, test sintaks konfigurasi, dan reload Nginx:
     ```bash
     $ sudo ln -sf /etc/nginx/sites-available/judgels /etc/nginx/sites-enabled/
     $ sudo nginx -t
@@ -423,11 +423,11 @@ Jika kalian sudah memiliki domain sendiri dan ingin Judgels dapat diakses secara
 
     ![Jalankan Certbot SSL](assets/screenshots/40-perintah-certbot-ssl.jpeg)
 
-    *(Jika sertifikat sudah pernah dibuat sebelumnya pada server ini, pilih opsi `1: Attempt to reinstall this existing certificate`)*. Certbot akan otomatis memperbarui blok server Nginx dengan konfigurasi SSL dan pengalihan otomatis HTTP ke HTTPS:
+    *(Jika sertifikat sudah pernah dibuat sebelumnya pada server ini, pilih opsi `1: Attempt to reinstall this existing certificate`)*. Certbot akan otomatis memperbarui blok server Nginx dengan konfigurasi SSL dan redirect otomatis HTTP ke HTTPS:
 
     ![Certbot Reinstall Berhasil](assets/screenshots/41-proses-certbot-reinstall.jpeg)
 
-6. Masuk ke direktori Judgels di server dan sesuaikan berkas `conf/judgels-client.js`:
+6. Masuk ke direktori Judgels di server dan sesuaikan file `conf/judgels-client.js`:
     ```bash
     $ cd /opt/judgels
     $ nano conf/judgels-client.js
@@ -462,11 +462,11 @@ Jika kalian sudah memiliki domain sendiri dan ingin Judgels dapat diakses secara
 # Maintenance
 [`^ kembali ke atas ^`](#)
 
-Berbeda dengan aplikasi statis, [**Judgels**](https://www.google.com/search?q=https%3A%2F%2Fjudgels.toki.id%2Fdocs%2Fdeployment%2Fconcepts%2F) menyimpan data kontes, akun pengguna, soal, dan hasil penilaian di dalam database **MySQL** (`judgels`), sedangkan berkas pengiriman kode peserta (*submission files*), *test case*, serta foto profil disimpan pada disk lokal (`/opt/judgels/server/var/data/`). Oleh karena itu, prosedur pemeliharaan mencakup pencadangan basis data dan berkas data, pembersihan log, serta pemantauan layanan dan antrean penjurian.
+Berbeda dengan aplikasi statis, [**Judgels**](https://www.google.com/search?q=https%3A%2F%2Fjudgels.toki.id%2Fdocs%2Fdeployment%2Fconcepts%2F) menyimpan data kontes, akun pengguna, soal, dan hasil penilaian di dalam database **MySQL** (`judgels`), sedangkan file submission kode peserta (*submission files*), *test case*, serta foto profil disimpan pada disk lokal (`/opt/judgels/server/var/data/`). Oleh karena itu, prosedur pemeliharaan mencakup backup database dan file data, pembersihan log, serta pemantauan layanan dan queue penjurian.
 
 ### 1. Backup Database MySQL, Berkas Data, dan Konfigurasi (Mingguan)
 
-Buat skrip `~/backup-judgels.sh` pada Core VM untuk mencadangkan database MySQL sekaligus berkas data dan konfigurasi aplikasi. Baca `DB_PASSWORD` dari `/opt/judgels/.env` dan jangan menyalin nilainya ke repositori:
+Buat skrip `~/backup-judgels.sh` pada Core VM untuk backup database MySQL sekaligus file data dan konfigurasi aplikasi. Baca `DB_PASSWORD` dari `/opt/judgels/.env` dan jangan menyalin nilainya ke repositori:
 
 ```
 #!/bin/bash
@@ -495,28 +495,28 @@ find "$BACKUP_DIR" -name 'judgels-*.gz' -mtime +28 -delete
 
 ```
 
-Beri izin eksekusi pada skrip:
+Beri permission execute pada script:
 
 ```
 chmod +x ~/backup-judgels.sh
 
 ```
 
-Jadwalkan pencadangan otomatis setiap hari Minggu pukul 02.00 dini hari menggunakan `crontab -e`:
+Jadwalkan backup otomatis setiap hari Minggu pukul 02.00 dini hari menggunakan `crontab -e`:
 
 ```
 0 2 * * 0 /home/<username>/backup-judgels.sh
 
 ```
 
-Untuk memulihkan (*restore*) data dari cadangan saat terjadi kendala:
+Untuk restore data dari cadangan saat terjadi kendala:
 
 ```
 # Pulihkan database MySQL
 DB_PASS="$(sed -n 's/^DB_PASSWORD=//p' /opt/judgels/.env)"
 gunzip < ~/backup-judgels/judgels-db-<tanggal>.sql.gz | docker exec -i judgels-mysql mysql -u judgels -p"$DB_PASS" judgels
 
-# Pulihkan berkas data dan konfigurasi, lalu restart kontainer
+# Pulihkan file data dan konfigurasi, lalu restart kontainer
 sudo tar -xzf ~/backup-judgels/judgels-data-<tanggal>.tar.gz -C /
 docker compose -f /opt/judgels/docker-compose.yml restart judgels-server judgels-client
 
@@ -533,7 +533,7 @@ Judgels Server menulis log operasional di `/opt/judgels/server/var/log/`. Gunaka
 
 ### 3. Pemantauan Layanan dan Antrean Penilaian
 
-Periksa kesehatan kontainer Docker, layanan pendukung (MySQL & Nginx), dan antrean RabbitMQ secara berkala:
+Periksa kesehatan kontainer Docker, layanan pendukung (MySQL & Nginx), dan queue RabbitMQ secara berkala:
 
 1. **Pemeriksaan Kontainer dan Log Aplikasi:**
    Pastikan kontainer `judgels-client`, `judgels-server`, `judgels-mysql`, dan `rabbitmq` berstatus *Up*:
@@ -577,13 +577,13 @@ docker compose up -d
 # Otomatisasi (opsional)
 [`^ kembali ke atas ^`](#)
 
-Jika kalian tidak ingin menjalankan setiap perintah instalasi, konfigurasi, maupun pencadangan secara manual satu per satu lewat terminal, kami sudah menyiapkan skrip shell otomasi praktis yang bisa langsung kalian gunakan:
+Jika kalian tidak ingin menjalankan setiap perintah instalasi, konfigurasi, maupun backup secara manual satu per satu lewat terminal, kami sudah menyiapkan skrip shell otomasi praktis yang bisa langsung kalian gunakan:
 
 ### 1. Skrip Otomatisasi Instalasi & Setup (`setup.sh`)
 Skrip [setup.sh](./setup.sh) akan otomatis mengurus seluruh tahapan persiapan Judgels di server kalian tanpa perlu ribet:
 - Membuat direktori kerja di `/opt/judgels`.
-- Menghasilkan kata sandi acak yang aman untuk MySQL, RabbitMQ, dan akun superadmin di berkas `.env`.
-- Mengonfigurasi `judgels-server.yml`, `judgels-client.js`, dan membuat berkas reverse proxy Nginx (`nginx-judgels.conf`).
+- Menghasilkan password acak yang aman untuk MySQL, RabbitMQ, dan akun superadmin di file `.env`.
+- Mengonfigurasi `judgels-server.yml`, `judgels-client.js`, dan membuat file reverse proxy Nginx (`nginx-judgels.conf`).
 - Menjalankan seluruh kontainer Docker secara otomatis.
 
 Cara menjalankannya gampang banget:
@@ -593,12 +593,12 @@ $ sudo ./setup.sh cp-judgels.web.id 3.0.0
 ```
 *(Kalian bisa ganti `cp-judgels.web.id` dengan domain milik kalian sendiri).*
 
-### 2. Skrip Otomatisasi Pencadangan Data (`backup.sh`)
+### 2. Skrip Otomatisasi Backup Data (`backup.sh`)
 Untuk menjaga keamanan data kontes, soal, dan akun pengguna dari hal-hal yang tidak diinginkan, kalian bisa menjalankan skrip [backup.sh](./backup.sh) kapan saja (atau dijadwalkan mingguan via `crontab`):
-- Melakukan *dump* basis data MySQL (`database.sql`).
-- Menyalin seluruh folder berkas data server (soal, test case, dan submission).
+- Melakukan *dump* database MySQL (`database.sql`).
+- Menyalin seluruh folder file data server (soal, test case, dan submission).
 - Menyalin konfigurasi `.env`.
-- Mengompres semuanya menjadi satu berkas arsip `.tar.gz` yang rapi dengan cap waktu otomatis di folder `~/backup-judgels/`.
+- Mengompres semuanya menjadi satu file arsip `.tar.gz` yang rapi dengan timestamp otomatis di folder `~/backup-judgels/`.
 
 Cara menjalankannya:
 ```bash
@@ -606,11 +606,11 @@ $ chmod +x backup.sh
 $ sudo ./backup.sh
 ```
 
-### 3. Skrip Otomatisasi Pemulihan Data (`restore.sh`)
-Nah, semisal server mengalami kendala atau kalian ingin mengembalikan data dari hasil pencadangan sebelumnya, cukup gunakan skrip [restore.sh](./restore.sh):
+### 3. Skrip Otomatisasi Restore Data (`restore.sh`)
+Nah, semisal server mengalami kendala atau kalian ingin mengembalikan data dari hasil backup sebelumnya, cukup gunakan skrip [restore.sh](./restore.sh):
 - Otomatis mengekstrak arsip cadangan.
-- Mengimpor kembali seluruh tabel basis data MySQL.
-- Memulihkan seluruh berkas data server dan memperbaiki hak aksesnya.
+- Mengimpor kembali seluruh tabel database MySQL.
+- Memulihkan seluruh file data server dan memperbaiki hak aksesnya.
 - Memulai ulang kontainer server Judgels.
 
 Cara menjalankannya:
@@ -633,7 +633,7 @@ $ sudo ./restore.sh ~/backup-judgels/judgels-backup-YYYY-MM-DD_HHMMSS.tar.gz
 | **Format Kontes** | IOI dan ICPC; mendukung kontes virtual | ICPC dan penilaian parsial bergaya IOI | Beragam format tugas dan penilaian; dirancang untuk kebutuhan IOI | ICPC, IOI, AtCoder, dan ECOO; mendukung partisipasi virtual |
 | **Fitur Pengelolaan** | Versi soal, pengumuman, klarifikasi, papan skor, serta peran pengelola dan pengawas | Antarmuka juri dan tim, klarifikasi, papan skor, serta penjurian ulang | Antarmuka administrasi, impor kontes dan soal, serta layanan papan skor | Arsip soal, editorial, papan skor, rating opsional, dan pengelolaan pengguna |
 | **Skalabilitas** | Bergantung pada kapasitas dan konfigurasi deployment | Kapasitas penjurian dapat ditambah dengan *judgehost* | Arsitektur terdistribusi dengan layanan dan pekerja penjurian | Mendukung banyak server penjurian |
-| **Kebutuhan Pengelolaan** | Administrator menyiapkan dan memelihara deployment serta server | Administrator menyiapkan server kontes, basis data, dan *judgehost* | Administrator menyiapkan layanan CMS, PostgreSQL, dan lingkungan penjurian | Administrator menyiapkan situs, basis data, dan server penjurian |
+| **Kebutuhan Pengelolaan** | Administrator menyiapkan dan memelihara deployment serta server | Administrator menyiapkan server kontes, database, dan *judgehost* | Administrator menyiapkan layanan CMS, PostgreSQL, dan lingkungan penjurian | Administrator menyiapkan situs, database, dan server penjurian |
 | **Biaya Perangkat Lunak** | Open Source, GPL-2.0; tetap memerlukan biaya infrastruktur | Open Source; tetap memerlukan biaya infrastruktur | Open Source; tetap memerlukan biaya infrastruktur | Open Source, AGPL-3.0; tetap memerlukan biaya infrastruktur |
 
 Judgels cocok bila dibutuhkan pengelolaan soal yang kaya fitur sekaligus kontes IOI dan ICPC. DOMjudge kuat untuk operasional kontes ICPC, CMS untuk kebutuhan olimpiade bergaya IOI, sedangkan DMOJ menggabungkan kontes dengan situs latihan dan arsip soal. Perbandingan ini didasarkan pada dokumentasi resmi Judgels, DOMjudge, CMS, dan DMOJ.
